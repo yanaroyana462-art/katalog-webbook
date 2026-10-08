@@ -1,0 +1,2699 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pustaka WebBook - Portal Interaktif</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📖</text></svg>">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class'
+    }
+  </script>
+  <!-- Supabase JS Client -->
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- DOMPurify untuk Proteksi Sanitasi XSS -->
+  <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  
+  <style>
+    [x-cloak] { display: none !important; }
+    ::-webkit-scrollbar { width: 7px; }
+    ::-webkit-scrollbar-track { background: #f7f5f0; }
+    ::-webkit-scrollbar-thumb { background: #d7d0c5; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #beaf9d; }
+    .dark ::-webkit-scrollbar-track { background: #0f172a; }
+    .dark ::-webkit-scrollbar-thumb { background: #334155; }
+
+    /* Styling Konten Pembaca (.book-content) untuk Mode Terang & Gelap */
+    .book-content {
+      color: #334155;
+      line-height: 1.8;
+    }
+    .dark .book-content {
+      color: #cbd5e1;
+    }
+    .book-content h1, .book-content h2, .book-content h3, .book-content h4, .book-content h5, .book-content h6 {
+      color: #0f172a;
+      font-weight: 700;
+      margin-top: 1.5em;
+      margin-bottom: 0.6em;
+    }
+    .dark .book-content h1, .dark .book-content h2, .dark .book-content h3, .dark .book-content h4, .dark .book-content h5, .dark .book-content h6 {
+      color: #f8fafc;
+    }
+    .book-content p {
+      margin-bottom: 1.1em;
+    }
+    .book-content blockquote, .book-content .info-box {
+      border-left: 4px solid #4f46e5;
+      background-color: #f8fafc;
+      color: #1e293b;
+      padding: 0.85rem 1.15rem;
+      border-radius: 0.5rem;
+      margin: 1.25em 0;
+    }
+    .dark .book-content blockquote, .dark .book-content .info-box {
+      border-left-color: #818cf8;
+      background-color: #1e293b;
+      color: #e2e8f0;
+    }
+    .book-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 0.5rem;
+    }
+    .book-content pre {
+      max-width: 100%;
+      overflow-x: auto;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      background-color: #f1f5f9;
+    }
+    .dark .book-content pre {
+      background-color: #1e293b;
+    }
+    .book-content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5em 0;
+      font-size: 0.875rem;
+      display: block;
+      overflow-x: auto;
+    }
+    .book-content th, .book-content td {
+      border: 1px solid #e2e8f0;
+      padding: 0.65rem 0.85rem;
+      text-align: left;
+    }
+    .dark .book-content th, .dark .book-content td {
+      border-color: #334155;
+    }
+    .book-content th {
+      background-color: #f1f5f9;
+      color: #0f172a;
+      font-weight: 600;
+    }
+    .dark .book-content th {
+      background-color: #0f172a;
+      color: #f8fafc;
+    }
+    .book-content code {
+      background-color: #f1f5f9;
+      color: #db2777;
+      padding: 0.2rem 0.4rem;
+      border-radius: 0.25rem;
+      font-size: 0.875em;
+    }
+    .dark .book-content code {
+      background-color: #1e293b;
+      color: #f472b6;
+    }
+
+    /* Sembunyikan scrollbar pada filter horizontal di HP agar terlihat rapi */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-[#faf8f5] via-[#f7f4ee] to-[#f0ece1] text-stone-800 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 dark:text-slate-100 font-sans antialiased min-h-screen selection:bg-indigo-600 selection:text-white transition-colors duration-300 relative overflow-x-hidden" x-data="portalEngine()">
+
+  <!-- Ambient Luxury Glow Decoration -->
+  <div class="fixed top-0 left-1/2 -translate-x-1/2 w-[850px] h-[340px] bg-gradient-to-b from-amber-200/25 via-indigo-200/20 to-transparent blur-3xl pointer-events-none -z-10 dark:opacity-10"></div>
+
+  <!-- ========================================== -->
+  <!-- 1. HEADER & NAVBAR                         -->
+  <!-- ========================================== -->
+  <header class="border-b border-stone-200/70 bg-[#fdfcfb]/85 dark:border-slate-800 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 transition-colors shadow-[0_2px_15px_-3px_rgba(0,0,0,0.03)]">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3 cursor-pointer" @click="goToCatalog()">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-700 via-indigo-600 to-amber-600 flex items-center justify-center font-bold text-white shadow-md shadow-indigo-600/25 tracking-wider ring-1 ring-white/40">
+          WB
+        </div>
+        <div>
+          <h1 class="font-bold text-sm text-stone-900 dark:text-white tracking-tight">Pustaka WebBook</h1>
+          <p class="text-[10px] text-stone-500 dark:text-slate-400 font-medium">Portal Buku Interaktif & Digital</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <!-- Tombol Toggle Dark / Light Mode -->
+        <button @click="toggleDarkMode()" type="button" 
+                class="p-2 rounded-lg text-stone-500 hover:text-stone-800 hover:bg-stone-200/60 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800 transition" 
+                :title="darkMode ? 'Beralih ke Mode Terang' : 'Beralih ke Mode Gelap'">
+          <!-- Ikon Bulan (Saat Mode Terang) -->
+          <svg x-show="!darkMode" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+          <!-- Ikon Matahari (Saat Mode Gelap) -->
+          <svg x-show="darkMode" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 9H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+        </button>
+
+        <template x-if="currentView === 'catalog' && !activeBook">
+          <button @click="currentView = 'upload'" class="px-3 sm:px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm shadow-indigo-600/20 hover:shadow flex-shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            <span class="hidden sm:inline">Unggah Buku</span>
+            <span class="sm:hidden">Unggah</span>
+          </button>
+        </template>
+
+        <template x-if="currentView === 'upload' && !activeBook">
+          <button @click="goToCatalog()" class="px-3 sm:px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium transition flex items-center gap-1.5 border border-slate-300 shadow-sm flex-shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            <span class="hidden sm:inline">Kembali ke Rak</span>
+            <span class="sm:hidden">Kembali</span>
+          </button>
+        </template>
+
+        <template x-if="activeBook">
+          <button @click="closeReader()" class="px-3 sm:px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium transition flex items-center gap-1.5 border border-slate-300 shadow-sm flex-shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            <span class="hidden sm:inline">Kembali ke Rak</span>
+            <span class="sm:hidden">Kembali</span>
+          </button>
+        </template>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- 2. KATALOG & FILTER (MENU NAVIGASI)        -->
+  <!-- ========================================== -->
+  <main class="max-w-6xl mx-auto px-4 py-8" x-show="currentView === 'catalog' && !activeBook" x-transition.opacity>
+    
+    <!-- Hero Banner -->
+    <section class="mb-8 text-center max-w-2xl mx-auto">
+      <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-300/40 text-[11px] font-semibold mb-2.5">
+        <span class="w-1.5 h-1.5 rounded-full bg-amber-600 dark:bg-amber-400 animate-pulse"></span> Koleksi Pilihan Perpustakaan
+      </div>
+      <h2 class="text-2xl md:text-3xl font-extrabold text-stone-900 dark:text-white tracking-tight">Eksplorasi Koleksi Rak Buku</h2>
+      <p class="text-stone-600 dark:text-slate-400 text-xs md:text-sm mt-1.5 leading-relaxed">Temukan pustaka digital interaktif dan kurasi pengetahuan berkelas berdasarkan kategori, judul, atau penulis favorit Anda.</p>
+    </section>
+
+    <!-- AREA FILTER & PENCARIAN -->
+    <div class="bg-white/80 dark:bg-slate-900/90 backdrop-blur-md border border-stone-200/80 dark:border-slate-800 rounded-2xl p-4 md:p-6 mb-8 space-y-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none">
+      
+      <!-- Tab Navigasi Lingkup: Semua Koleksi vs Buku Saya (Hanya tampil jika sudah login) -->
+      <template x-if="currentUser">
+        <div class="flex items-center gap-2 pb-3 border-b border-stone-200/60 dark:border-slate-800">
+          <button type="button" @click="scopeFilter = 'all'"
+                  class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5"
+                  :class="scopeFilter === 'all' 
+                    ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' 
+                    : 'bg-stone-100 dark:bg-slate-800 text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white'">
+            <span>Semua Koleksi</span>
+          </button>
+          <button type="button" @click="scopeFilter = 'my-books'"
+                  class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5"
+                  :class="scopeFilter === 'my-books' 
+                    ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30' 
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+            <span>Buku Saya</span>
+            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold" 
+                  :class="scopeFilter === 'my-books' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'" 
+                  x-text="catalog.filter(b => b.userId === currentUser.id).length"></span>
+          </button>
+        </div>
+      </template>
+
+      <!-- Input Cari Judul / Penulis -->
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </div>
+        <input type="text" x-model="searchQuery" placeholder="Cari berdasarkan Judul Buku atau Nama Penulis..." 
+               class="w-full bg-stone-50/80 dark:bg-slate-950 border border-stone-200 dark:border-slate-700/80 rounded-xl pl-10 pr-12 py-2.5 text-xs md:text-sm text-stone-900 dark:text-slate-100 placeholder-stone-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-950 focus:outline-none focus:border-amber-600 focus:ring-2 focus:ring-amber-500/20 dark:focus:ring-indigo-900/40 transition" />
+        <button x-show="searchQuery" @click="searchQuery = ''" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-medium">
+          Clear
+        </button>
+      </div>
+
+      <!-- Filter Kategori (Buttons) -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-1 pt-1 no-scrollbar">
+        <span class="text-xs font-semibold text-stone-500 dark:text-slate-400 mr-1 whitespace-nowrap">Kategori:</span>
+        <template x-for="cat in categories" :key="cat">
+          <button @click="selectedCategory = cat" 
+                  class="px-3.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all border"
+                  :class="selectedCategory === cat ? 'bg-stone-900 border-stone-900 text-white dark:bg-indigo-600 dark:border-indigo-600 shadow-sm font-semibold' : 'bg-[#faf8f5] dark:bg-slate-800/80 border-stone-200/90 dark:border-slate-700 text-stone-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 hover:text-stone-900 dark:hover:text-white hover:border-stone-300 dark:hover:border-slate-600'">
+            <span x-text="cat"></span>
+          </button>
+        </template>
+      </div>
+
+      <!-- Filter Tipe Akses (Gratis, Semi Berbayar, Berbayar) & Penulis -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+        <!-- Filter Tipe Akses -->
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">Akses:</span>
+          <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            <template x-for="access in accessOptions" :key="access">
+              <button @click="selectedAccess = access"
+                      class="px-2.5 py-1 rounded-md text-[11px] font-medium transition border whitespace-nowrap"
+                      :class="selectedAccess === access 
+                        ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent font-semibold shadow-sm' 
+                        : 'bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800'">
+                <span x-text="access"></span>
+              </button>
+            </template>
+          </div>
+        </div>
+
+        <!-- Filter Daftar Penulis -->
+        <div class="flex items-center gap-2 sm:justify-end">
+          <label class="text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">Penulis:</label>
+          <select x-model="selectedAuthor" 
+                  class="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-200 rounded-lg px-2.5 py-1.5 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:border-indigo-500 w-full sm:max-w-[200px] truncate">
+            <option value="Semua Penulis">Semua Penulis</option>
+            <template x-for="author in authorList" :key="author">
+              <option :value="author" x-text="author"></option>
+            </template>
+          </select>
+        </div>
+      </div>
+
+      <!-- Ringkasan Filter & Urutan -->
+      <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800">
+        <div class="font-medium">
+          Menampilkan <span class="text-indigo-600 dark:text-indigo-400 font-bold" x-text="filteredBooks.length"></span> dari <span class="text-slate-700 dark:text-slate-300 font-semibold" x-text="catalog.length"></span> buku
+        </div>
+        <div class="flex items-center gap-2">
+          <span>Urutkan:</span>
+          <select x-model="sortBy" class="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-200 rounded-lg px-2.5 py-1 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:border-indigo-500">
+            <option value="newest">Terbaru</option>
+            <option value="title">Judul (A-Z)</option>
+            <option value="author">Penulis (A-Z)</option>
+          </select>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- GRID BUKU HASIL FILTER -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" x-show="filteredBooks.length > 0">
+      <template x-for="book in filteredBooks" :key="book.id">
+        <div class="bg-gradient-to-b from-white via-[#faf9f6]/80 to-[#f5f2eb]/70 dark:from-slate-900 dark:to-slate-950 border border-stone-200/90 dark:border-slate-800 rounded-2xl overflow-hidden hover:border-amber-400/80 dark:hover:border-indigo-500/50 hover:shadow-[0_16px_35px_-8px_rgba(120,90,40,0.12)] dark:hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 group flex flex-col justify-between">
+          
+          <div>
+            <!-- Sampul Buku (Cover Image) -->
+            <div class="relative h-44 w-full overflow-hidden bg-slate-100 dark:bg-slate-800 cursor-pointer" @click="handleBookClick(book)">
+              <template x-if="book.coverUrl">
+                <img :src="book.coverUrl" :alt="book.title" loading="lazy" decoding="async" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out" />
+              </template>
+              <template x-if="!book.coverUrl">
+                <div class="w-full h-full bg-gradient-to-tr from-indigo-500 to-violet-600 flex items-center justify-center text-white/40">
+                  <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                </div>
+              </template>
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-900/30 via-transparent to-transparent"></div>
+              
+              <!-- Label Kategori & Privasi di Atas Sampul -->
+              <div class="absolute top-3 left-3 right-3 flex items-center justify-between">
+                <span class="text-[11px] font-semibold tracking-wide px-2.5 py-1 rounded-md bg-white/90 dark:bg-slate-900/90 backdrop-blur-md text-indigo-700 dark:text-indigo-300 border border-white/60 dark:border-slate-700/60 shadow-sm" x-text="book.category"></span>
+                <div class="flex items-center gap-1.5">
+                  <span x-show="purchasedBookIds.includes(book.id)" class="text-[10px] bg-emerald-600/95 text-white border border-emerald-400 px-2 py-0.5 rounded font-semibold shadow-sm backdrop-blur-md flex items-center gap-1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                    <span>Sudah Dibeli</span>
+                  </span>
+                  <span class="text-[10px] px-2 py-0.5 rounded font-semibold border backdrop-blur-md shadow-sm"
+                        :class="{
+                          'bg-emerald-500/95 text-white border-emerald-400': book.accessType === 'Gratis',
+                          'bg-amber-500/95 text-white border-amber-400': book.accessType === 'Semi Berbayar',
+                          'bg-blue-600/95 text-white border-blue-500': book.accessType === 'Berbayar'
+                        }" x-text="book.accessType"></span>
+                  <span x-show="book.isPrivate" class="text-[10px] bg-slate-800/95 text-slate-200 px-2 py-0.5 rounded font-medium shadow-sm border border-slate-700">Internal</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-5">
+              <h3 @click="handleBookClick(book)" 
+                  class="text-base font-bold text-stone-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition leading-snug line-clamp-2 cursor-pointer hover:underline" x-text="book.title"></h3>
+              
+              <!-- Penulis (Bisa Diklik untuk Filter Penulis) -->
+              <p class="text-xs font-medium text-stone-500 dark:text-slate-400 mt-1 cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-300 hover:underline" 
+                 @click="searchQuery = book.author" 
+                 x-text="`Penulis: ${book.author}`"></p>
+              
+              <p class="text-xs text-stone-600 dark:text-slate-300 mt-2.5 line-clamp-2 leading-relaxed" x-text="book.blurb"></p>
+            </div>
+          </div>
+
+          <div class="px-5 py-3.5 bg-[#fbf9f5] dark:bg-slate-950/60 border-t border-stone-200/70 dark:border-slate-800 flex items-center justify-between">
+            <div>
+              <span class="text-[11px] text-stone-500 dark:text-slate-400 block" x-text="`${book.chapters.length} Bab`"></span>
+              <template x-if="book.accessType === 'Berbayar'">
+                <div>
+                  <span x-show="!purchasedBookIds.includes(book.id)" class="text-xs font-bold text-indigo-600 dark:text-indigo-400" x-text="formatCurrency(book.price)"></span>
+                  <span x-show="purchasedBookIds.includes(book.id)" class="text-xs font-bold text-emerald-600 dark:text-emerald-400">Terbuka</span>
+                </div>
+              </template>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <!-- Tombol Aksi khusus pemilik buku (Edit & Hapus) -->
+              <template x-if="currentUser && book.userId === currentUser.id">
+                <div class="flex items-center gap-1">
+                  <button @click="openEditModal(book)" class="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition" title="Edit Buku Saya">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                  </button>
+                <button @click="deleteBook(book)" class="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition" title="Hapus Buku Saya">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+                </div>
+              </template>
+
+            <button @click="openBook(book)" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-sm shadow-indigo-600/20 transition flex items-center gap-1.5">
+              <span>Baca Sekarang</span>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+            </button>
+            </div>
+          </div>
+
+        </div>
+      </template>
+    </div>
+
+    <!-- Tampilan Jika Buku Tidak Ditemukan -->
+    <div x-show="filteredBooks.length === 0" class="text-center py-16 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+      <svg class="w-12 h-12 text-slate-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+      <p class="text-sm text-slate-600 dark:text-slate-300 font-medium" 
+         x-text="scopeFilter === 'my-books' ? 'Anda belum memiliki buku yang diunggah ke rak.' : 'Tidak ada buku yang sesuai dengan pencarian atau kategori ini.'"></p>
+      <div class="mt-3 flex items-center justify-center gap-2">
+        <button @click="resetFilters()" class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-lg transition">
+          Reset Filter
+        </button>
+        <template x-if="scopeFilter === 'my-books'">
+          <button @click="currentView = 'upload'" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition">
+            Unggah Buku Sekarang
+          </button>
+        </template>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- 2B. HALAMAN UNGGAH FILE & METADATA BUKU   -->
+  <!-- ========================================== -->
+  <main class="max-w-3xl mx-auto px-4 py-8" x-show="currentView === 'upload' && !activeBook" x-cloak x-transition.opacity>
+    
+    <!-- Judul Halaman -->
+    <div class="mb-6">
+      <div class="flex items-center gap-2 text-xs text-indigo-600 dark:text-indigo-400 font-semibold mb-1">
+        <button @click="goToCatalog()" class="hover:underline">Katalog Rak</button>
+        <span>/</span>
+        <span class="text-slate-500 dark:text-slate-400">Unggah Buku Baru</span>
+      </div>
+      <h2 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Unggah Dokumen & Data Buku</h2>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Tambahkan koleksi buku baru dengan mengisi metadata dan mengunggah dokumen digital.</p>
+    </div>
+
+    <!-- Kartu Kontak & Bantuan Admin -->
+    <div class="mb-6 p-4 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-sm">
+      <div class="flex items-start gap-3">
+        <div class="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+        </div>
+        <div>
+          <h4 class="font-bold text-amber-900 dark:text-amber-200">Butuh Bantuan Unggah atau Publikasi Buku?</h4>
+          <p class="text-amber-700 dark:text-amber-300/90 text-[11px] mt-0.5 leading-relaxed">
+            Jika mengalami kendala format dokumen, pendaftaran member, atau tautan WebBook, tim admin siap memandu Anda.
+          </p>
+        </div>
+      </div>
+      <a :href="`https://wa.me/${adminWaNumber}?text=${encodeURIComponent('Halo Admin Pustaka WebBook, saya butuh bantuan / panduan terkait pengunggahan buku.')}`" 
+         target="_blank" 
+         rel="noopener noreferrer"
+         class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold flex items-center gap-1.5 flex-shrink-0 transition shadow-sm w-full sm:w-auto justify-center text-center">
+        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.694.072-2.073-.501-1.637-.68-2.686-2.347-2.766-2.455-.08-.108-.663-.881-.663-1.681 0-.8.419-1.194.568-1.356.149-.162.325-.203.433-.203.11 0 .219.002.315.006.102.005.239-.039.373.284.14.336.477 1.166.518 1.251.042.085.07.185.012.3-.058.115-.088.187-.174.288-.087.102-.183.227-.262.305-.088.087-.18.182-.078.358.102.175.454.748.974 1.212.668.596 1.232.781 1.408.868.175.086.279.073.382-.045.103-.118.441-.513.56-.688.118-.175.237-.146.398-.086.161.06 1.023.482 1.198.57.175.087.292.13.335.203.044.074.044.43-.1.835z"/></svg>
+        <span>Chat WhatsApp Admin</span>
+      </a>
+    </div>
+
+    <!-- Kartu Login / Daftar Akun jika belum terautentikasi -->
+    <div x-show="!currentUser" class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-6 md:p-8 max-w-md mx-auto shadow-sm shadow-slate-200 dark:shadow-none">
+      <div class="text-center mb-6">
+        <div class="w-12 h-12 mx-auto rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-3">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+        </div>
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white" x-text="authMode === 'login' ? 'Masuk ke Akun Member' : 'Daftar Akun Member'"></h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Hanya member terdaftar yang memiliki izin untuk mempublikasikan dan mengunggah berkas buku.</p>
+      </div>
+
+      <!-- Tab Navigasi Mode Auth -->
+      <div class="flex bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl mb-5 text-xs font-semibold">
+        <button type="button" @click="authMode = 'login'; authError = ''; authSuccess = '';" 
+                :class="authMode === 'login' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'"
+                class="flex-1 py-2 rounded-lg transition text-center">
+          Masuk
+        </button>
+        <button type="button" @click="authMode = 'register'; authError = ''; authSuccess = '';" 
+                :class="authMode === 'register' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'"
+                class="flex-1 py-2 rounded-lg transition text-center">
+          Daftar Akun
+        </button>
+      </div>
+
+      <!-- Pesan Notifikasi Error / Sukses Auth -->
+      <div x-show="authError" class="p-3 mb-4 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 text-xs">
+        <span x-text="authError"></span>
+      </div>
+      <div x-show="authSuccess" class="p-3 mb-4 rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 text-xs">
+        <span x-text="authSuccess"></span>
+      </div>
+
+      <!-- Form Masuk / Daftar -->
+      <form @submit.prevent="handleAuth()" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Alamat Email</label>
+          <input type="email" x-model="authEmail" required placeholder="nama@email.com" 
+                 class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Kata Sandi</label>
+          <input type="password" x-model="authPassword" required minlength="6" placeholder="Minimal 6 karakter" 
+                 class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition" />
+        </div>
+
+        <button type="submit" :disabled="authLoading" 
+                class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white rounded-xl text-xs font-semibold shadow-md shadow-indigo-600/30 transition flex items-center justify-center gap-2">
+          <template x-if="authLoading">
+            <svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+          </template>
+          <span x-text="authLoading ? 'Memproses...' : (authMode === 'login' ? 'Masuk Sekarang' : 'Daftar Sekarang')"></span>
+        </button>
+      </form>
+    </div>
+
+    <!-- Form Unggah (Hanya Tampil Jika Sudah Login) -->
+    <div x-show="currentUser" class="space-y-4">
+      <!-- Status Akun Login Bar -->
+      <div class="bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-900/60 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs">
+        <div class="flex items-center gap-2 text-indigo-950 dark:text-indigo-200">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+          <span>Masuk sebagai: <strong class="font-semibold" x-text="currentUser?.email"></strong></span>
+        </div>
+        <button type="button" @click="handleLogout()" class="text-rose-600 dark:text-rose-400 font-semibold hover:underline flex items-center gap-1">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+          <span>Keluar</span>
+        </button>
+      </div>
+
+      <!-- Banner Mode Edit: Mempertahankan Bab Lama & Menambah Bab Baru -->
+      <div x-show="isEditingId" class="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl flex items-center justify-between gap-3 text-xs">
+        <div class="flex items-center gap-2 text-amber-800 dark:text-amber-200">
+          <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+          <span>Mode Memperbarui Buku: Seluruh bab lama telah dimuat. Anda dapat mengedit atau menambahkan bab baru di bawah.</span>
+        </div>
+        <button type="button" @click="cancelEditMode()" class="px-3 py-1 bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/50 text-amber-900 dark:text-amber-200 rounded-lg font-semibold transition flex-shrink-0">
+          Batal Edit
+        </button>
+      </div>
+
+      <form @submit.prevent="saveNewBook()" class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-6 md:p-8 space-y-6 shadow-sm shadow-slate-200 dark:shadow-none">
+      
+      <!-- Area Upload File (Drag and Drop / File Picker) -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">Berkas Buku Digital</label>
+        
+        <div class="relative border-2 border-dashed rounded-xl p-6 text-center transition cursor-pointer"
+             :class="isDragging ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20' : 'border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-950/50 hover:border-slate-400 dark:hover:border-slate-600'"
+             @dragover.prevent="isDragging = true"
+             @dragleave.prevent="isDragging = false"
+             @drop.prevent="handleFileDrop($event)">
+          
+          <input type="file" id="bookFile" ref="fileInput" @change="handleFileChange($event)"
+                 accept=".pdf,.epub,.docx,.doc,.txt,.md,.markdown,.json,.html"
+                 class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+          
+          <!-- Tampilan Belum Ada File -->
+          <template x-if="!uploadForm.file">
+            <div class="space-y-2 pointer-events-none">
+              <div class="w-12 h-12 mx-auto rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+              </div>
+              <p class="text-xs md:text-sm font-medium text-slate-700 dark:text-slate-300">
+                <span class="text-indigo-600 dark:text-indigo-400 font-semibold underline">Klik untuk memilih file</span> atau seret file ke area ini
+              </p>
+              <p class="text-[11px] text-slate-400 dark:text-slate-500">Mendukung format: <span class="text-slate-600 dark:text-slate-400 font-mono">PDF, EPUB, DOCX, TXT, MD, JSON, HTML</span></p>
+            </div>
+          </template>
+
+          <!-- Tampilan Jika File Sudah Terpilih -->
+          <template x-if="uploadForm.file">
+            <div class="flex items-center justify-between bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 text-left shadow-sm">
+              <div class="flex items-center gap-3 overflow-hidden">
+                <div class="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-xs uppercase flex-shrink-0 border border-indigo-100 dark:border-indigo-900" x-text="uploadForm.fileExtension || 'FILE'">
+                </div>
+                <div class="overflow-hidden">
+                  <p class="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate" x-text="uploadForm.fileName"></p>
+                  <p class="text-[10px] text-slate-500 dark:text-slate-400" x-text="uploadForm.fileSize"></p>
+                </div>
+              </div>
+              <button type="button" @click.stop="clearFile()" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-md transition" title="Hapus File">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- Grid Input: Judul & Penulis -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+            Judul Buku <span class="text-rose-500">*</span>
+          </label>
+          <input type="text" x-model="uploadForm.title" required placeholder="Contoh: Arsitektur Sistem Modern" 
+                 class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2 text-xs md:text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900/40 transition" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+            Nama Penulis / Editor <span class="text-rose-500">*</span>
+          </label>
+          <input type="text" x-model="uploadForm.author" required placeholder="Contoh: Yana Royana" 
+                 class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2 text-xs md:text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900/40 transition" />
+        </div>
+      </div>
+
+      <!-- Profil & Identitas Penulis (Foto & Biografi) -->
+      <div class="space-y-4 p-4 rounded-xl bg-slate-50/70 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800">
+        <div class="flex items-center justify-between">
+          <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Profil & Identitas Penulis (Opsional)</label>
+          <span class="text-[10px] text-slate-400">Ditampilkan pada halaman sampul & deskripsi</span>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Foto / Avatar Penulis -->
+          <div class="space-y-2">
+            <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400">Foto Penulis / Avatar</label>
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-full border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 overflow-hidden flex-shrink-0 flex items-center justify-center relative shadow-sm">
+                <template x-if="uploadForm.authorPhoto">
+                  <img :src="uploadForm.authorPhoto" alt="Preview Penulis" class="w-full h-full object-cover" />
+                </template>
+                <template x-if="!uploadForm.authorPhoto">
+                  <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                </template>
+              </div>
+              <div class="flex-1 space-y-1.5">
+                <div class="flex items-center gap-2">
+                  <label class="px-2.5 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium cursor-pointer transition border border-slate-300 dark:border-slate-700 inline-flex items-center gap-1 shadow-sm">
+                    <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    <span>Pilih Foto</span>
+                    <input type="file" accept="image/*" @change="handleAuthorPhotoUpload($event)" class="hidden" />
+                  </label>
+                  <button type="button" x-show="uploadForm.authorPhoto" @click="uploadForm.authorPhoto = ''; uploadForm.authorPhotoFile = null;" 
+                          class="text-xs text-rose-500 hover:underline">Hapus</button>
+                </div>
+                <input type="url" x-model="uploadForm.authorPhoto" placeholder="Atau tempel URL foto (https://...)" 
+                       class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Biografi Penulis -->
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Biografi Singkat / Keahlian</label>
+            <textarea x-model="uploadForm.authorBio" rows="3" placeholder="Contoh: Praktisi arsitektur perangkat lunak dan pegiat open-source..."
+                      class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grid Input: Kategori & Visibilitas -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Kategori</label>
+          <div class="flex gap-2">
+            <select x-model="uploadForm.category" class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2 text-xs md:text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 transition">
+              <template x-for="cat in availableCategories" :key="cat">
+                <option :value="cat" x-text="cat"></option>
+              </template>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Aksesibilitas Koleksi</label>
+          <div class="flex flex-wrap items-center gap-3 sm:gap-4 min-h-[38px]">
+            <label class="inline-flex items-center cursor-pointer text-xs text-slate-700 dark:text-slate-300">
+              <input type="radio" value="false" x-model="uploadForm.isPrivate" class="text-indigo-600 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 focus:ring-indigo-500" />
+              <span class="ml-2">Publik</span>
+            </label>
+            <label class="inline-flex items-center cursor-pointer text-xs text-slate-700 dark:text-slate-300">
+              <input type="radio" value="true" x-model="uploadForm.isPrivate" class="text-indigo-600 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 focus:ring-indigo-500" />
+              <span class="ml-2">Internal / Klien Rahasia</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grid Input: Tipe Akses & Privasi -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Tipe Akses / Lisensi</label>
+          <div class="flex flex-wrap items-center gap-3 min-h-[38px]">
+            <label class="inline-flex items-center cursor-pointer text-xs text-slate-700 dark:text-slate-300">
+              <input type="radio" value="Gratis" x-model="uploadForm.accessType" class="text-indigo-600 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 focus:ring-indigo-500" />
+              <span class="ml-1.5">Gratis</span>
+            </label>
+            <label class="inline-flex items-center cursor-pointer text-xs text-slate-700 dark:text-slate-300">
+              <input type="radio" value="Semi Berbayar" x-model="uploadForm.accessType" class="text-indigo-600 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 focus:ring-indigo-500" />
+              <span class="ml-1.5">Semi Berbayar</span>
+            </label>
+            <label class="inline-flex items-center cursor-pointer text-xs text-slate-700 dark:text-slate-300">
+              <input type="radio" value="Berbayar" x-model="uploadForm.accessType" class="text-indigo-600 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 focus:ring-indigo-500" />
+              <span class="ml-1.5">Berbayar</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Input Nominal Harga (Hanya muncul jika tipe 'Berbayar') -->
+        <div x-show="uploadForm.accessType === 'Berbayar'" x-cloak x-transition>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+            Harga Buku (Rp) <span class="text-rose-500">*</span>
+          </label>
+          <input type="number" min="0" step="1000" x-model.number="uploadForm.price" placeholder="Contoh: 49000" 
+                 class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2 text-xs md:text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900/40 transition" />
+        </div>
+      </div>
+
+      <!-- Unggah Sampul Buku (Dari Perangkat & URL) -->
+      <div class="space-y-2">
+        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+          Sampul Buku (Cover Image)
+        </label>
+        <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+          <!-- Preview Sampul -->
+          <div class="w-20 h-28 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 overflow-hidden flex-shrink-0 flex items-center justify-center relative shadow-sm">
+            <template x-if="uploadForm.coverUrl">
+              <img :src="uploadForm.coverUrl" alt="Preview Cover" class="w-full h-full object-cover" />
+            </template>
+            <template x-if="!uploadForm.coverUrl">
+              <span class="text-[10px] text-slate-400 text-center px-1">Tanpa Sampul</span>
+            </template>
+          </div>
+
+          <!-- Pilihan File dari Perangkat & Input URL -->
+          <div class="flex-1 w-full space-y-2">
+            <div class="flex items-center gap-2">
+              <label class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-medium cursor-pointer transition border border-slate-300 dark:border-slate-700 inline-flex items-center gap-1.5 shadow-sm">
+                <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <span>Pilih dari Perangkat</span>
+                <input type="file" accept="image/*" @change="handleCoverUpload($event)" class="hidden" />
+              </label>
+              <button type="button" x-show="uploadForm.coverUrl" @click="uploadForm.coverUrl = ''; uploadForm.coverFile = null;" 
+                      class="text-xs text-rose-500 hover:underline py-1 px-2">
+                Hapus Sampul
+              </button>
+            </div>
+            <div>
+              <input type="url" x-model="uploadForm.coverUrl" placeholder="Atau tempel URL gambar (https://...)" 
+                     class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sinopsis / Blurb -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+          Sinopsis / Deskripsi Singkat <span class="text-rose-500">*</span>
+        </label>
+        <textarea x-model="uploadForm.blurb" rows="3" required placeholder="Tuliskan ringkasan pokok materi atau pengantar buku..."
+                  class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs md:text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-900/40 transition"></textarea>
+      </div>
+
+      <!-- Kata Pengantar & Halaman Pendahuluan -->
+      <div class="space-y-4 p-4 rounded-xl bg-slate-50/70 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">Bagian Pembuka Buku (Opsional)</label>
+          <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Teks kata pengantar dan pendahuluan akan otomatis ditambahkan sebagai modul pembaca sebelum bab utama.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Kata Pengantar</label>
+            <textarea x-model="uploadForm.foreword" rows="3" placeholder="Prakata dari penulis atau pengantar buku..."
+                      class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"></textarea>
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Halaman Pendahuluan</label>
+            <textarea x-model="uploadForm.introduction" rows="3" placeholder="Latar belakang topik, tujuan, atau ruang lingkup materi..."
+                      class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Link Eksternal / WebBook Vercel -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Link WebBook Vercel / Eksternal (Opsional)</label>
+        <input type="url" x-model="uploadForm.external_link" placeholder="Contoh: https://pustaka-buku.vercel.app"
+               class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2 text-xs md:text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition" />
+        <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Buku akan otomatis dibuka di dalam iframe embedded viewer bila link ini diisi.</p>
+      </div>
+
+      <!-- Daftar Bab / Modul Teks Dinamis -->
+      <div class="space-y-4">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+          <div>
+            <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Daftar Bab & Materi WebBook</label>
+            <p class="text-[11px] text-slate-400 dark:text-slate-500">Tambahkan satu atau lebih bab untuk langsung dibaca di portal pembaca.</p>
+          </div>
+          <button type="button" @click="addChapter()" class="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800/80 rounded-lg text-xs font-semibold transition flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            <span>Tambah Bab</span>
+          </button>
+        </div>
+
+        <div class="space-y-4">
+          <template x-for="(chap, idx) in uploadForm.chapters" :key="idx">
+            <div class="p-4 bg-slate-50/70 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-indigo-600 dark:text-indigo-400" x-text="`Bab ${idx + 1}`"></span>
+                <button type="button" x-show="uploadForm.chapters.length > 1" @click="removeChapter(idx)" 
+                        class="text-rose-500 hover:text-rose-600 text-xs font-medium flex items-center gap-1 transition">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                  <span>Hapus Bab</span>
+                </button>
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Judul Bab</label>
+                <input type="text" x-model="chap.title" :placeholder="`Contoh: Bab ${idx + 1}: Pengantar Pokok Bahasan`"
+                       class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition" />
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="text-[11px] font-semibold text-slate-600 dark:text-slate-400">Konten Bab</label>
+                  <span class="text-[10px] text-slate-400">HTML / Teks</span>
+                </div>
+                <textarea x-model="chap.content" rows="3" placeholder="Tuliskan isi materi bab di sini..."
+                          class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono transition"></textarea>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- Glosarium & Daftar Pustaka (Bagian Penutup) -->
+      <div class="space-y-4 p-4 rounded-xl bg-slate-50/70 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">Bagian Penutup & Referensi (Opsional)</label>
+          <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Glosarium istilah dan daftar pustaka akan otomatis ditambahkan sebagai modul penutup di pembaca buku.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Glosarium</label>
+            <textarea x-model="uploadForm.glossary" rows="3" placeholder="Daftar istilah penting dan artinya yang digunakan dalam materi..."
+                      class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"></textarea>
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Daftar Pustaka</label>
+            <textarea x-model="uploadForm.bibliography" rows="3" placeholder="Referensi literatur, buku rujukan, jurnal, atau tautan sumber..."
+                      class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notifikasi Status Pesan -->
+      <div x-show="uploadMessage.text" 
+           :class="uploadMessage.type === 'success' ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300' : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300'"
+           class="p-3 rounded-xl border text-xs flex items-center justify-between shadow-sm">
+        <span x-text="uploadMessage.text"></span>
+        <button type="button" @click="uploadMessage.text = ''" class="hover:opacity-75">&times;</button>
+      </div>
+
+      <!-- Tombol Aksi -->
+      <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+        <button type="button" @click="goToCatalog()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-lg transition">
+          Batal
+        </button>
+        <button type="submit" :disabled="isSaving" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white text-xs font-semibold rounded-lg shadow-md shadow-indigo-600/30 transition flex items-center gap-1.5">
+          <template x-if="isSaving">
+            <svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+          </template>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+          <span x-text="isSaving ? 'Menyimpan...' : 'Simpan ke Rak Buku'"></span>
+        </button>
+      </div>
+
+    </form>
+
+    <!-- Panduan & FAQ Format Berkas (Bisa Dibuka-Tutup) -->
+    <div class="mt-6 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-5 shadow-sm" x-data="{ showFaq: false }">
+      <button type="button" @click="showFaq = !showFaq" class="w-full flex items-center justify-between text-left">
+        <div class="flex items-center gap-2.5">
+          <div class="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center flex-shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          </div>
+          <div>
+            <h4 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">Panduan & Format Berkas yang Diterima</h4>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">Klik untuk melihat spesifikasi dokumen, gambar cover, dan integrasi WebBook.</p>
+          </div>
+        </div>
+        <div class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+          <svg class="w-4 h-4 transform transition-transform duration-200" :class="showFaq ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+        </div>
+      </button>
+
+      <div x-show="showFaq" x-cloak x-collapse class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3.5 text-xs">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800">
+            <div class="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 mb-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> Dokumen Digital (Maks. 15 MB)
+            </div>
+            <p class="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed">
+              Mendukung ekstensi <code class="text-indigo-600 dark:text-indigo-400 font-mono">.pdf, .epub, .docx, .doc, .txt, .md, .html, .json</code>. File teks (MD/TXT) dapat terbaca otomatis ke dalam editor bab.
+            </p>
+          </div>
+
+          <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800">
+            <div class="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 mb-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Gambar Sampul & Foto Penulis (Maks. 2 MB)
+            </div>
+            <p class="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed">
+              Format yang didukung adalah <code class="text-emerald-600 dark:text-emerald-400 font-mono">JPG, PNG, WebP</code>. Rasio ideal untuk sampul buku adalah 3:4 atau 2:3 agar presisi di rak buku.
+            </p>
+          </div>
+        </div>
+
+        <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200/80 dark:border-slate-800">
+          <div class="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 mb-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Link WebBook Eksternal (Vercel / Netlify / Custom URL)
+          </div>
+          <p class="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed">
+            Jika Anda memiliki aplikasi buku interaktif atau materi berbasis web, isi kolom tautan dengan protokol lengkap (<code class="text-amber-600 dark:text-amber-400 font-mono">https://...</code>). Pastikan domain target mengizinkan penayangan dalam <em class="font-mono">iframe</em>.
+          </p>
+        </div>
+
+        <div class="text-[11px] text-slate-500 dark:text-slate-400 italic">
+          *Catatan: Dokumen yang diunggah akan otomatis tersimpan di Supabase Storage yang aman dan terisolasi.
+        </div>
+      </div>
+    </div>
+
+    </div>
+  </main>
+
+  <!-- ========================================== -->
+  <!-- 3. DYNAMIC READER ENGINE                   -->
+  <!-- ========================================== -->
+  <div class="max-w-4xl mx-auto px-4 py-6" x-show="activeBook" x-cloak x-transition.opacity>
+    
+    <div class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-xl p-3 sm:p-4 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-sm">
+      <div class="flex items-center gap-3 w-full md:w-auto">
+        <template x-if="activeBook?.coverUrl">
+          <img :src="activeBook.coverUrl" :alt="activeBook.title" loading="lazy" decoding="async" class="w-11 h-14 object-cover rounded-md shadow-sm border border-slate-200 dark:border-slate-700 flex-shrink-0" />
+        </template>
+        <div class="min-w-0 flex-1">
+          <span class="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-wider" x-text="activeBook?.category"></span>
+          <h2 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate" x-text="activeBook?.title"></h2>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate" x-text="`Penulis: ${activeBook?.author}`"></p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-between md:justify-end">
+        <!-- Switcher Mode Baca: Sampul & Info vs Teks Bab vs Embedded Viewer -->
+        <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
+          <button type="button" @click="readerTab = 'overview'; stopTTS();"
+                  class="px-2.5 py-1 rounded-md text-xs font-semibold transition flex items-center gap-1"
+                  :class="readerTab === 'overview' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'">
+            <span>Sampul & Info</span>
+          </button>
+          <template x-if="activeBook?.external_link">
+            <button type="button" @click="readerTab = 'external'; stopTTS();"
+                    class="px-2.5 py-1 rounded-md text-xs font-semibold transition flex items-center gap-1"
+                    :class="readerTab === 'external' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'">
+              <span>WebBook (Live)</span>
+            </button>
+          </template>
+          <button type="button" @click="readerTab = 'text'; stopTTS();"
+                  class="px-2.5 py-1 rounded-md text-xs font-semibold transition"
+                  :class="readerTab === 'text' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'">
+            <span>Teks Bab</span>
+          </button>
+          <template x-if="activeBook?.fileUrl">
+            <button type="button" @click="readerTab = 'document'; stopTTS();"
+                    class="px-2.5 py-1 rounded-md text-xs font-semibold transition flex items-center gap-1"
+                    :class="readerTab === 'document' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+              <span>Embedded Viewer</span>
+            </button>
+          </template>
+        </div>
+
+        <!-- Tombol Buka Drawer Daftar Isi (Sangat praktis di HP) -->
+        <button type="button" @click="isTocDrawerOpen = true" 
+                class="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition">
+          <svg class="w-4 h-4 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
+          <span>Daftar Isi</span>
+          <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-indigo-100 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 font-bold" x-text="activeBook?.chapters?.length || 0"></span>
+        </button>
+
+        <div x-show="readerTab === 'text'" class="flex flex-wrap items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+          <button @click="toggleTTS()" 
+                  class="px-3 py-1.5 rounded-lg text-xs font-medium border transition flex items-center gap-1.5"
+                  :class="isSpeaking ? 'bg-amber-500 border-amber-600 text-white animate-pulse' : 'bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+            <span x-text="isSpeaking ? 'Hentikan Audio' : 'Dengarkan Bab Ini'"></span>
+          </button>
+
+          <select x-model="currentChapterIndex" @change="stopTTS()" class="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500 flex-1 sm:flex-none max-w-full sm:max-w-[180px] truncate">
+            <template x-for="(chap, idx) in activeBook?.chapters" :key="idx">
+              <option :value="idx" x-text="`Bab ${idx + 1}: ${chap.title}`"></option>
+            </template>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAMPILAN HALAMAN SAMPUL & DESKRIPSI SINGKAT (OVERVIEW SEBELUM BACA BAB) -->
+    <div x-show="readerTab === 'overview'" class="bg-[#fefdfc] dark:bg-slate-900 border border-stone-200/80 dark:border-slate-800 rounded-2xl p-6 md:p-10 shadow-[0_10px_35px_rgb(0,0,0,0.04)] mb-6" x-transition>
+      <div class="flex flex-col md:flex-row gap-8 items-start">
+        <!-- Sampul Buku -->
+        <div class="w-full md:w-56 flex-shrink-0 flex flex-col items-center">
+          <div class="w-48 md:w-56 h-64 md:h-72 rounded-xl overflow-hidden shadow-xl border border-stone-200 dark:border-slate-700 bg-stone-100 dark:bg-slate-800 relative">
+            <template x-if="activeBook?.coverUrl">
+              <img :src="activeBook.coverUrl" :alt="activeBook.title" loading="lazy" decoding="async" class="w-full h-full object-cover" />
+            </template>
+            <template x-if="!activeBook?.coverUrl">
+              <div class="w-full h-full bg-gradient-to-tr from-indigo-500 to-violet-600 flex items-center justify-center text-white/50">
+                <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- Rincian & Sinopsis Ringkas -->
+        <div class="flex-1 space-y-4">
+          <div>
+            <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400" x-text="activeBook?.category"></span>
+            <h2 class="text-2xl md:text-3xl font-extrabold text-stone-900 dark:text-white mt-1 leading-tight" x-text="activeBook?.title"></h2>
+            <p class="text-sm font-medium text-stone-500 dark:text-slate-400 mt-1" x-text="`Penulis: ${activeBook?.author}`"></p>
+          </div>
+
+          <div class="py-3 border-y border-stone-200/70 dark:border-slate-800">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-stone-400 dark:text-slate-500 mb-2">Sinopsis & Ringkasan Materi</h4>
+            <p class="text-sm md:text-base leading-relaxed text-stone-700 dark:text-slate-300 whitespace-pre-line" x-text="activeBook?.blurb"></p>
+          </div>
+
+          <!-- Profil & Foto Penulis -->
+          <div class="p-4 rounded-xl bg-stone-100/70 dark:bg-slate-800/50 border border-stone-200/80 dark:border-slate-700/60 flex items-start gap-3.5">
+            <div class="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-indigo-100 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-xs shadow-sm">
+              <template x-if="activeBook?.authorPhoto">
+                <img :src="activeBook.authorPhoto" :alt="activeBook?.author" class="w-full h-full object-cover" />
+              </template>
+              <template x-if="!activeBook?.authorPhoto">
+                <span x-text="getAuthorInitials(activeBook?.author)"></span>
+              </template>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <h4 class="text-xs font-bold text-stone-900 dark:text-white truncate" x-text="activeBook?.author"></h4>
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800 font-semibold">Penulis</span>
+              </div>
+              <p class="text-xs text-stone-600 dark:text-slate-300 mt-1 leading-relaxed" 
+                 x-text="activeBook?.authorBio || `Kreator dan praktisi di bidang ${activeBook?.category || 'literasi'}. Berfokus membagikan wawasan dan pengalaman terstruktur melalui karya pustaka digital.`"></p>
+            </div>
+          </div>
+
+          <!-- Tombol Masuk ke Halaman Bab -->
+          <div class="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <template x-if="activeBook?.accessType === 'Berbayar' && !purchasedBookIds.includes(activeBook?.id)">
+              <button @click="openPaymentModal(activeBook)" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs md:text-sm font-semibold shadow-md shadow-emerald-600/30 transition flex items-center justify-center gap-2 text-center">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                <span>Beli Akses Penuh (<span x-text="formatCurrency(activeBook?.price)"></span>)</span>
+              </button>
+            </template>
+            <template x-if="activeBook?.external_link">
+              <button @click="readerTab = 'external'; stopTTS();" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs md:text-sm font-semibold shadow-md shadow-indigo-600/30 transition flex items-center justify-center gap-2 text-center">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                <span>Buka WebBook Interaktif</span>
+              </button>
+            </template>
+            <button @click="startReading(0)" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs md:text-sm font-semibold shadow-md shadow-indigo-600/30 transition flex items-center justify-center gap-2 text-center">
+              <span x-text="activeBook?.accessType === 'Berbayar' && !purchasedBookIds.includes(activeBook?.id) ? 'Baca Pratinjau (Bab 1)' : 'Mulai Baca Bab 1'"></span>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+            </button>
+          </div>
+
+          <!-- Daftar Bab -->
+          <div class="mt-6 pt-4 border-t border-stone-200/70 dark:border-slate-800" x-show="activeBook?.chapters?.length > 0">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-slate-400 mb-3">Daftar Bab Tersedia:</h4>
+            <div class="space-y-2">
+              <template x-for="(ch, idx) in activeBook?.chapters" :key="idx">
+                <div @click="startReading(idx)" class="p-3 bg-stone-50 dark:bg-slate-800/60 hover:bg-indigo-50/70 dark:hover:bg-indigo-950/40 border border-stone-200/80 dark:border-slate-700/80 rounded-xl cursor-pointer transition flex items-center justify-between text-xs group">
+                  <span class="font-medium text-stone-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400" x-text="`Bab ${idx + 1}: ${ch.title}`"></span>
+                  <div class="flex items-center gap-2">
+                    <span x-show="activeBook?.accessType === 'Berbayar' && !purchasedBookIds.includes(activeBook?.id) && idx > 0" class="text-[11px] text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                      <span>Terkunci</span>
+                    </span>
+                    <span x-show="activeBook?.accessType !== 'Berbayar' || purchasedBookIds.includes(activeBook?.id) || idx === 0" class="text-[11px] text-stone-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 font-semibold flex items-center gap-1">
+                      <span x-text="activeBook?.accessType === 'Berbayar' && !purchasedBookIds.includes(activeBook?.id) && idx === 0 ? 'Baca Pratinjau &rarr;' : 'Baca Bab Ini &rarr;'"></span>
+                    </span>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAMPILAN WEBBOOK EKSTERNAL (IFRAME VERCEL / LIVE APP) -->
+    <div x-show="readerTab === 'external' && activeBook?.external_link" class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm mb-6" x-transition>
+      <div class="px-4 py-3 bg-slate-50 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
+        <div class="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium truncate">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse flex-shrink-0"></span>
+          <span class="truncate" x-text="activeBook?.external_link"></span>
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <button type="button" @click="isEmbedFullscreen = !isEmbedFullscreen" 
+                  class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded text-xs transition flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+            <span x-text="isEmbedFullscreen ? 'Kecilkan' : 'Layar Penuh'"></span>
+          </button>
+          <a :href="activeBook?.external_link" target="_blank" rel="noopener noreferrer" class="text-indigo-600 dark:text-indigo-400 hover:underline text-xs flex items-center gap-1 font-semibold">
+            <span>Buka Tab Baru</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+          </a>
+        </div>
+      </div>
+      <div :class="isEmbedFullscreen ? 'fixed inset-0 z-50 bg-slate-950 p-4 flex flex-col' : 'relative w-full h-[450px] sm:h-[650px] md:h-[750px] bg-slate-100 dark:bg-slate-950'">
+        <div x-show="isEmbedFullscreen" class="flex justify-between items-center mb-2 px-2 text-white">
+          <span class="text-xs font-semibold truncate" x-text="activeBook?.title"></span>
+          <button type="button" @click="isEmbedFullscreen = false" class="px-3 py-1 bg-white/20 hover:bg-white/30 text-white rounded text-xs font-medium">Tutup Layar Penuh (&times;)</button>
+        </div>
+        <iframe 
+          :src="activeBook?.external_link" 
+          class="w-full h-full flex-1 rounded-b-xl border-0" 
+          title="WebBook Viewer"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+        ></iframe>
+      </div>
+    </div>
+
+    <!-- TAMPILAN EMBEDDED VIEWER (DOKUMEN DI DALAM HALAMAN) -->
+    <div x-show="readerTab === 'document' && activeBook?.fileUrl" class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm mb-6" x-transition>
+      <div class="px-4 py-3 bg-slate-50 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
+        <div class="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium truncate">
+          <svg class="w-4 h-4 text-indigo-600 dark:text-indigo-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+          <span class="truncate" x-text="activeBook?.fileName || 'Dokumen Buku Interaktif'"></span>
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <button type="button" @click="isEmbedFullscreen = !isEmbedFullscreen" 
+                  class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded text-xs transition flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+            <span x-text="isEmbedFullscreen ? 'Kecilkan' : 'Layar Penuh'"></span>
+          </button>
+          <a :href="activeBook?.fileUrl" download class="text-indigo-600 dark:text-indigo-400 hover:underline text-xs flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            <span>Unduh</span>
+          </a>
+        </div>
+      </div>
+      <div :class="isEmbedFullscreen ? 'fixed inset-0 z-50 bg-slate-950 p-4 flex flex-col' : 'relative w-full h-[450px] sm:h-[650px] md:h-[720px] bg-slate-100 dark:bg-slate-950'">
+        <div x-show="isEmbedFullscreen" class="flex justify-between items-center mb-2 px-2 text-white">
+          <span class="text-xs font-semibold truncate" x-text="activeBook?.title"></span>
+          <button type="button" @click="isEmbedFullscreen = false" class="px-3 py-1 bg-white/20 hover:bg-white/30 text-white rounded text-xs font-medium">Tutup Layar Penuh (&times;)</button>
+        </div>
+        <iframe :src="getEmbedUrl(activeBook?.fileUrl)" class="w-full h-full flex-1 rounded-b-xl border-0" allow="fullscreen"></iframe>
+      </div>
+    </div>
+
+    <!-- TAMPILAN TEKS BAB / ARTIKEL -->
+    <article x-show="readerTab === 'text'" class="bg-[#fefdfc] dark:bg-slate-900 border border-stone-200/80 dark:border-slate-800 rounded-2xl p-6 md:p-10 shadow-[0_10px_35px_rgb(0,0,0,0.04)]">
+      <header class="border-b border-stone-200/70 dark:border-slate-800 pb-4 mb-6">
+        <span class="text-xs text-stone-400 dark:text-slate-500 font-medium" x-text="`Bab ${currentChapterIndex + 1} dari ${activeBook?.chapters.length}`"></span>
+        <h3 class="text-xl md:text-2xl font-bold text-stone-900 dark:text-white mt-1" x-text="activeBook?.chapters[currentChapterIndex]?.title"></h3>
+      </header>
+
+      <div x-show="isLoadingChapters" class="py-12 text-center text-xs text-slate-400">
+        <span>Memuat materi bab dari server...</span>
+      </div>
+      <div x-show="!isLoadingChapters">
+      <div class="book-content max-w-none text-sm md:text-base" 
+           x-html="getSanitizedContent(activeBook?.chapters[currentChapterIndex]?.content)">
+      </div>
+      </div>
+
+      <footer class="mt-10 pt-6 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row gap-3 sm:gap-0 items-stretch sm:items-center justify-between">
+        <button @click="currentChapterIndex === 0 ? readerTab = 'overview' : prevChapter()" 
+                class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-lg transition text-center">
+          <span x-show="currentChapterIndex === 0">&larr; Halaman Sampul</span>
+          <span x-show="currentChapterIndex > 0">&larr; Bab Sebelumnya</span>
+        </button>
+
+        <button @click="nextChapter()" :disabled="currentChapterIndex === activeBook?.chapters.length - 1" 
+                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-30 text-white text-xs font-semibold rounded-lg transition text-center">
+          Bab Selanjutnya &rarr;
+        </button>
+      </footer>
+    </article>
+
+  </div>
+
+  <!-- ========================================== -->
+  <!-- DRAWER / SLIDE-OVER DAFTAR ISI (MOBILE)    -->
+  <!-- ========================================== -->
+  <div x-show="isTocDrawerOpen" x-cloak class="relative z-50">
+    <!-- Backdrop transparan -->
+    <div x-show="isTocDrawerOpen" 
+         x-transition:enter="ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         @click="isTocDrawerOpen = false" 
+         class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
+
+    <!-- Panel Menu Drawer -->
+    <div class="fixed inset-y-0 right-0 max-w-full flex pl-10">
+      <div x-show="isTocDrawerOpen" 
+           x-transition:enter="transform transition ease-in-out duration-300"
+           x-transition:enter-start="translate-x-full"
+           x-transition:enter-end="translate-x-0"
+           x-transition:leave="transform transition ease-in-out duration-300"
+           x-transition:leave-start="translate-x-0"
+           x-transition:leave-end="translate-x-full"
+           class="w-screen max-w-xs sm:max-w-sm bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col">
+        
+        <!-- Header Drawer -->
+        <div class="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white">Daftar Isi Buku</h3>
+          </div>
+          <button @click="isTocDrawerOpen = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+
+        <!-- Daftar List Bab -->
+        <div class="flex-1 overflow-y-auto p-3 space-y-1.5 text-xs">
+          <template x-for="(chapter, idx) in activeBook?.chapters" :key="idx">
+            <button type="button" @click="selectChapterFromDrawer(idx)"
+                    class="w-full text-left p-3 rounded-xl transition flex items-start justify-between gap-2 border"
+                    :class="readerTab === 'text' && currentChapterIndex === idx 
+                      ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 font-semibold shadow-sm' 
+                      : 'bg-transparent border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-300'">
+              <div class="flex items-start gap-2 min-w-0">
+                <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] flex-shrink-0"
+                      :class="readerTab === 'text' && currentChapterIndex === idx ? 'bg-indigo-600 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'"
+                      x-text="idx + 1"></span>
+                <span class="truncate leading-5" x-text="chapter.title"></span>
+              </div>
+              <span x-show="activeBook?.accessType === 'Berbayar' && !purchasedBookIds.includes(activeBook?.id) && idx > 0" class="text-amber-500 flex-shrink-0">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+              </span>
+            </button>
+          </template>
+        </div>
+
+        <!-- Footer Drawer Ringkas -->
+        <div class="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+          <span x-text="`Total: ${activeBook?.chapters?.length || 0} Bab`"></span>
+          <button type="button" @click="readerTab = 'overview'; isTocDrawerOpen = false; stopTTS();" class="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline">Ke Halaman Sampul</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL EDIT DATA BUKU                       -->
+  <!-- ========================================== -->
+  <div x-show="isEditModalOpen" x-cloak 
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+       x-transition:enter="transition ease-out duration-200"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-150"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0">
+
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6 shadow-2xl relative"
+         @click.outside="if(!isUpdatingBook) closeEditModal()"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100">
+      
+      <!-- Header Modal -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div>
+          <h3 class="text-base font-bold text-slate-900 dark:text-white">Edit Informasi Buku</h3>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">Perbarui judul, penulis, sinopsis, atau harga buku Anda.</p>
+        </div>
+        <button @click="closeEditModal()" :disabled="isUpdatingBook" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <!-- Form Edit -->
+      <form @submit.prevent="updateBook()" class="mt-4 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Judul Buku <span class="text-rose-500">*</span></label>
+          <input type="text" x-model="editForm.title" required 
+                 class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2 text-xs md:text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Nama Penulis / Editor <span class="text-rose-500">*</span></label>
+          <input type="text" x-model="editForm.author" required 
+                 class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2 text-xs md:text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition" />
+        </div>
+
+        <!-- Profil & Foto Penulis -->
+        <div class="space-y-3 p-3.5 rounded-xl bg-slate-50/70 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800">
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">Profil & Foto Penulis (Opsional)</label>
+          
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-full border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 overflow-hidden flex-shrink-0 flex items-center justify-center relative shadow-sm">
+              <template x-if="editForm.authorPhoto">
+                <img :src="editForm.authorPhoto" alt="Preview Penulis" class="w-full h-full object-cover" />
+              </template>
+              <template x-if="!editForm.authorPhoto">
+                <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+              </template>
+            </div>
+            <div class="flex-1 space-y-1.5">
+              <div class="flex items-center gap-2">
+                <label class="px-2.5 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium cursor-pointer transition border border-slate-300 dark:border-slate-700 inline-flex items-center gap-1 shadow-sm">
+                  <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                  <span>Pilih Foto</span>
+                  <input type="file" accept="image/*" @change="handleEditAuthorPhotoUpload($event)" class="hidden" />
+                </label>
+                <button type="button" x-show="editForm.authorPhoto" @click="editForm.authorPhoto = ''; editForm.authorPhotoFile = null;" 
+                        class="text-xs text-rose-500 hover:underline">Hapus</button>
+              </div>
+              <input type="url" x-model="editForm.authorPhoto" placeholder="Atau tempel URL foto (https://...)" 
+                     class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">Biografi Singkat / Keahlian Penulis</label>
+            <textarea x-model="editForm.authorBio" rows="2" placeholder="Ringkasan keahlian atau biografi singkat penulis..."
+                      class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"></textarea>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Sinopsis / Blurb <span class="text-rose-500">*</span></label>
+          <textarea x-model="editForm.blurb" rows="3" required 
+                    class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs md:text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Harga Buku (Rp)</label>
+          <input type="number" min="0" step="1000" x-model.number="editForm.price" 
+                 class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2 text-xs md:text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 transition" />
+          <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Setel 0 jika buku dapat diakses secara gratis.</p>
+        </div>
+
+        <!-- Tombol Lanjut ke Formulir Input Lengkap -->
+        <div class="p-3 bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-900/60 rounded-xl flex items-center justify-between gap-3 text-xs">
+          <span class="text-indigo-900 dark:text-indigo-200 text-[11px] leading-tight">Ingin mengubah bab, mengunggah ulang dokumen, atau melengkapi data pembuka/penutup?</span>
+          <button type="button" @click="editInFullForm()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold flex-shrink-0 transition flex items-center gap-1 shadow-sm">
+            <span>Buka di Halaman Input</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+          </button>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Link WebBook Vercel / Eksternal</label>
+          <input type="url" x-model="editForm.external_link" placeholder="Contoh: https://pustaka-buku.vercel.app" 
+                 class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2 text-xs md:text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 transition" />
+        </div>
+
+        <div class="mt-5 flex gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <button type="button" @click="closeEditModal()" :disabled="isUpdatingBook"
+                  class="w-1/3 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition">
+            Batal
+          </button>
+          <button type="submit" :disabled="isUpdatingBook"
+                  class="w-2/3 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-75 text-white rounded-xl text-xs font-semibold shadow-md shadow-indigo-600/30 transition flex items-center justify-center gap-2">
+            <template x-if="isUpdatingBook">
+              <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+            </template>
+            <span x-text="isUpdatingBook ? 'Menyimpan...' : 'Simpan Perubahan'"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL DIALOG PEMBAYARAN INTERAKTIF         -->
+  <!-- ========================================== -->
+  <div x-show="isPaymentModalOpen" x-cloak 
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+       x-transition:enter="transition ease-out duration-200"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-150"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0">
+
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-4 sm:p-6 shadow-2xl relative overflow-hidden"
+         @click.outside="if(!isProcessingPayment) closePaymentModal()"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100">
+      
+      <!-- Header Modal -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div>
+          <h3 class="text-base font-bold text-slate-900 dark:text-white">Checkout Buku Premium</h3>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">Konfirmasi pemesanan dan pembayaran langsung melalui WhatsApp.</p>
+        </div>
+        <button @click="closePaymentModal()" :disabled="isProcessingPayment" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <!-- Ringkasan Buku -->
+      <div class="mt-4 p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/70 dark:border-slate-700/60 flex items-center gap-3">
+        <template x-if="checkoutBook?.coverUrl">
+          <img :src="checkoutBook.coverUrl" :alt="checkoutBook?.title" class="w-12 h-16 object-cover rounded-md shadow-sm border border-slate-200 dark:border-slate-700 flex-shrink-0" />
+        </template>
+        <div class="overflow-hidden">
+          <span class="text-[10px] uppercase font-bold tracking-wider text-indigo-600 dark:text-indigo-400" x-text="checkoutBook?.category"></span>
+          <h4 class="text-xs font-bold text-slate-900 dark:text-white truncate" x-text="checkoutBook?.title"></h4>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400" x-text="`Penulis: ${checkoutBook?.author}`"></p>
+          <p class="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5" x-text="formatCurrency(checkoutBook?.price)"></p>
+        </div>
+      </div>
+
+      <!-- Pilihan Metode Pembayaran -->
+      <div class="mt-4">
+        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">Pilih Metode Pembayaran</label>
+        <div class="grid grid-cols-1 gap-2">
+          <template x-for="method in paymentMethods" :key="method.id">
+            <label class="flex items-center justify-between p-3 rounded-xl border cursor-pointer transition text-xs"
+                   :class="selectedPaymentMethod === method.id 
+                     ? 'border-indigo-600 bg-indigo-50/40 dark:bg-indigo-950/20 text-slate-900 dark:text-white font-medium ring-1 ring-indigo-500' 
+                     : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-600 dark:text-slate-300'">
+              <div class="flex items-center gap-2.5">
+                <input type="radio" :value="method.id" x-model="selectedPaymentMethod" class="text-indigo-600 focus:ring-indigo-500" />
+                <div>
+                  <span class="block" x-text="method.name"></span>
+                  <span class="text-[10px] text-slate-400 dark:text-slate-500" x-text="method.desc"></span>
+                </div>
+              </div>
+              <span class="text-[10px] uppercase font-semibold px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-slate-500" x-text="method.badge"></span>
+            </label>
+          </template>
+        </div>
+      </div>
+
+      <!-- Info Konfirmasi WhatsApp -->
+      <div class="mt-4 p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 rounded-xl flex items-start gap-2.5 text-xs text-emerald-800 dark:text-emerald-300">
+        <svg class="w-4 h-4 mt-0.5 flex-shrink-0 text-emerald-600" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.694.072-2.073-.501-1.637-.68-2.686-2.347-2.766-2.455-.08-.108-.663-.881-.663-1.681 0-.8.419-1.194.568-1.356.149-.162.325-.203.433-.203.11 0 .219.002.315.006.102.005.239-.039.373.284.14.336.477 1.166.518 1.251.042.085.07.185.012.3-.058.115-.088.187-.174.288-.087.102-.183.227-.262.305-.088.087-.18.182-.078.358.102.175.454.748.974 1.212.668.596 1.232.781 1.408.868.175.086.279.073.382-.045.103-.118.441-.513.56-.688.118-.175.237-.146.398-.086.161.06 1.023.482 1.198.57.175.087.292.13.335.203.044.074.044.43-.1.835z"/>
+        </svg>
+        <span>Setelah konfirmasi, Anda akan diarahkan ke WhatsApp Admin untuk menerima instruksi nomor rekening/QRIS dan konfirmasi aktivasi.</span>
+      </div>
+
+      <!-- Rincian Total -->
+      <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 space-y-1.5 text-xs text-slate-600 dark:text-slate-400">
+        <div class="flex justify-between">
+          <span>Harga Buku</span>
+          <span class="font-medium text-slate-800 dark:text-slate-200" x-text="formatCurrency(checkoutBook?.price)"></span>
+        </div>
+        <div class="flex justify-between text-[11px]">
+          <span>Biaya Transaksi</span>
+          <span class="text-emerald-600 dark:text-emerald-400 font-semibold">Gratis</span>
+        </div>
+        <div class="flex justify-between pt-2 border-t border-dashed border-slate-200 dark:border-slate-700 text-sm font-bold text-slate-900 dark:text-white">
+          <span>Total Pembayaran</span>
+          <span class="text-indigo-600 dark:text-indigo-400" x-text="formatCurrency(checkoutBook?.price)"></span>
+        </div>
+      </div>
+
+      <!-- Tombol Aksi Pembayaran -->
+      <div class="mt-5 flex gap-2">
+        <button type="button" @click="closePaymentModal()" :disabled="isProcessingPayment"
+                class="w-1/3 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition">
+          Batal
+        </button>
+        <button type="button" @click="processPayment()" :disabled="isProcessingPayment"
+                class="w-2/3 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-75 text-white rounded-xl text-xs font-semibold shadow-md shadow-emerald-600/30 transition flex items-center justify-center gap-2">
+          <template x-if="isProcessingPayment">
+            <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+          </template>
+          <template x-if="!isProcessingPayment">
+            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+              <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.694.072-2.073-.501-1.637-.68-2.686-2.347-2.766-2.455-.08-.108-.663-.881-.663-1.681 0-.8.419-1.194.568-1.356.149-.162.325-.203.433-.203.11 0 .219.002.315.006.102.005.239-.039.373.284.14.336.477 1.166.518 1.251.042.085.07.185.012.3-.058.115-.088.187-.174.288-.087.102-.183.227-.262.305-.088.087-.18.182-.078.358.102.175.454.748.974 1.212.668.596 1.232.781 1.408.868.175.086.279.073.382-.045.103-.118.441-.513.56-.688.118-.175.237-.146.398-.086.161.06 1.023.482 1.198.57.175.087.292.13.335.203.044.074.044.43-.1.835z"/>
+            </svg>
+          </template>
+          <span x-text="isProcessingPayment ? 'Membuka WhatsApp...' : 'Konfirmasi via WhatsApp'"></span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 4. LOGIKA ENGINE & FILTER (ALPINE.JS)      -->
+  <!-- ========================================== -->
+  <script>
+    // Konfigurasi Kredensial Supabase
+    const SUPABASE_URL = 'https://klumtyeooujhonbrhnzv.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_GFJBw5j2h8_AdR_ge2ci-Q_WtiBCFtb';
+    const SUPABASE_STORAGE_BUCKET = 'books'; // Nama Supabase Storage Bucket (Public)
+    const ADMIN_WHATSAPP_NUMBER = '6285794506290'; // Sesuaikan dengan nomor WhatsApp Admin (awali dengan 62)
+
+    function portalEngine() {
+      return {
+        currentView: 'catalog', // 'catalog' | 'upload'
+        
+        // Auth State
+        currentUser: null,
+        authMode: 'login', // 'login' | 'register'
+        authEmail: '',
+        authPassword: '',
+        authLoading: false,
+        authError: '',
+        authSuccess: '',
+        darkMode: false,
+        supabaseClient: null,
+        isSaving: false,
+        isLoadingChapters: false,
+        isTocDrawerOpen: false,
+        activeBook: null,
+        readerTab: 'overview', // 'overview' | 'text' | 'document' | 'external'
+        isEmbedFullscreen: false,
+        currentChapterIndex: 0,
+        isSpeaking: false,
+        synth: window.speechSynthesis,
+
+        get book() {
+          return this.activeBook;
+        },
+
+        // State Modal Checkout Pembayaran
+        adminWaNumber: ADMIN_WHATSAPP_NUMBER,
+        isPaymentModalOpen: false,
+        checkoutBook: null,
+        selectedPaymentMethod: 'qris',
+        isProcessingPayment: false,
+        paymentMethods: [
+          { id: 'qris', name: 'QRIS / E-Wallet', desc: 'GoPay, OVO, ShopeePay, Dana', badge: 'Instan' },
+          { id: 'va', name: 'Virtual Account', desc: 'BCA, Mandiri, BNI, BRI', badge: 'Otomatis' },
+          { id: 'cc', name: 'Kartu Kredit / Debit', desc: 'Visa, Mastercard, JCB', badge: 'Aman' }
+        ],
+        purchasedBookIds: [],
+
+        // State Modal Edit Buku
+        isEditModalOpen: false,
+        isUpdatingBook: false,
+        editForm: {
+          originalBook: null,
+          category: '',
+          id: '',
+          title: '',
+          author: '',
+          authorBio: '',
+          authorPhoto: '',
+          authorPhotoFile: null,
+          blurb: '',
+          price: 0,
+          external_link: ''
+        },
+
+        // State Filter
+        scopeFilter: 'all', // 'all' | 'my-books'
+        searchQuery: '',
+        selectedCategory: 'Semua',
+        selectedAccess: 'Semua',
+        selectedAuthor: 'Semua Penulis',
+        accessOptions: ['Semua', 'Gratis', 'Semi Berbayar', 'Berbayar'],
+        sortBy: 'newest',
+
+        // Daftar Kategori Dinamis
+        categories: ['Semua', 'Teknologi & AI', 'Edukasi & Parenting', 'Bisnis & SOP', 'Agama & Pemikiran'],
+
+        init() {
+          const savedTheme = localStorage.getItem('theme');
+          if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            this.darkMode = true;
+            document.documentElement.classList.add('dark');
+          } else {
+            this.darkMode = false;
+            document.documentElement.classList.remove('dark');
+          }
+
+          const savedPurchases = localStorage.getItem('purchasedBookIds');
+          if (savedPurchases) {
+            try {
+              this.purchasedBookIds = JSON.parse(savedPurchases);
+            } catch (e) {
+              this.purchasedBookIds = [];
+            }
+          }
+
+          // Inisialisasi Supabase
+          if (window.supabase && SUPABASE_URL !== 'https://YOUR_PROJECT_ID.supabase.co') {
+            this.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            
+            // Cek Sesi Pengguna Aktif
+            this.supabaseClient.auth.getSession().then(({ data: { session } }) => {
+              this.currentUser = session?.user || null;
+              if (this.currentUser) this.fetchUserPurchases();
+            });
+
+            this.supabaseClient.auth.onAuthStateChange((_event, session) => {
+              this.currentUser = session?.user || null;
+              if (this.currentUser) this.fetchUserPurchases();
+            });
+
+            this.fetchBooks();
+          }
+        },
+
+        async fetchBooks() {
+          if (!this.supabaseClient) return;
+          try {
+            // Mengambil data buku langsung tanpa subquery bersarang agar tidak memicu 400 bila FK belum ada
+            const { data, error } = await this.supabaseClient
+              .from('books')
+              .select('*')
+              .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            if (data && data.length > 0) {
+              // Ambil relasi bab dari tabel chapters agar jumlah bab di rak akurat
+              const chaptersByBook = {};
+              try {
+                const { data: chData } = await this.supabaseClient
+                  .from('chapters')
+                  .select('id, book_id, title, content, chapter_order, is_preview')
+                  .order('chapter_order', { ascending: true });
+
+                if (chData) {
+                  chData.forEach(ch => {
+                    const bId = String(ch.book_id);
+                    if (!chaptersByBook[bId]) chaptersByBook[bId] = [];
+                    chaptersByBook[bId].push(ch);
+                  });
+                }
+              } catch (chErr) {
+                console.warn('Gagal memuat relasi chapters:', chErr);
+              }
+
+              this.catalog = data.map(item => {
+                const bookIdStr = String(item.id);
+                const bookChapters = chaptersByBook[bookIdStr] || (Array.isArray(item.chapters) && item.chapters.length > 0 ? item.chapters : null);
+                return {
+                id: String(item.id),
+                userId: item.user_id || null,
+                title: item.title,
+                category: item.category,
+                author: item.author,
+                authorBio: item.author_bio || null,
+                authorPhoto: item.author_photo || null,
+                createdAt: item.created_at ? item.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+                blurb: item.blurb,
+                accessType: item.access_type || 'Gratis',
+                price: item.price || 0,
+                isPrivate: Boolean(item.is_private),
+                coverUrl: item.cover_url || '',
+                fileName: item.file_name || null,
+                external_link: item.external_link || null,
+                fileUrl: item.file_url || null,
+                chapters: bookChapters && bookChapters.length > 0 
+                  ? bookChapters.sort((a, b) => (a.chapter_order || 0) - (b.chapter_order || 0))
+                  : [{
+                      title: 'Bab 1: Pengantar ' + item.title,
+                      content: `<p>${item.blurb || 'Tidak ada konten.'}</p>`
+                    }]
+                };
+              });
+
+              // Tambahkan opsi kategori baru jika ada dari database
+              const fetchedCategories = [...new Set(this.catalog.map(b => b.category))];
+              this.categories = ['Semua', ...new Set([...this.categories.slice(1), ...fetchedCategories])];
+            }
+          } catch (err) {
+            console.error('Gagal mengambil data dari Supabase:', err.message);
+          }
+        },
+
+        async fetchUserPurchases() {
+          if (!this.supabaseClient || !this.currentUser) return;
+          try {
+            const { data, error } = await this.supabaseClient
+              .from('purchases')
+              .select('book_id')
+              .eq('user_id', this.currentUser.id);
+            if (!error && data && data.length > 0) {
+              const remoteIds = data.map(row => String(row.book_id));
+              this.purchasedBookIds = [...new Set([...this.purchasedBookIds, ...remoteIds])];
+              localStorage.setItem('purchasedBookIds', JSON.stringify(this.purchasedBookIds));
+            }
+          } catch (err) {
+            console.error('Gagal mengambil riwayat pembelian akun:', err);
+          }
+        },
+
+        toggleDarkMode() {
+          this.darkMode = !this.darkMode;
+          localStorage.setItem('theme', this.darkMode ? 'dark' : 'light');
+          if (this.darkMode) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        },
+
+        get availableCategories() {
+          return this.categories.filter(c => c !== 'Semua');
+        },
+
+        get authorList() {
+          return [...new Set(this.catalog.map(b => b.author))].sort();
+        },
+
+        async handleAuth() {
+          if (!this.supabaseClient) {
+            this.authError = 'Layanan database belum terhubung.';
+            return;
+          }
+          this.authLoading = true;
+          this.authError = '';
+          this.authSuccess = '';
+
+          try {
+            if (this.authMode === 'login') {
+              const { data, error } = await this.supabaseClient.auth.signInWithPassword({
+                email: this.authEmail,
+                password: this.authPassword
+              });
+              if (error) throw error;
+              this.currentUser = data.user;
+              this.authPassword = '';
+            } else {
+              const { data, error } = await this.supabaseClient.auth.signUp({
+                email: this.authEmail,
+                password: this.authPassword
+              });
+              if (error) throw error;
+              this.authSuccess = 'Pendaftaran berhasil! Silakan periksa email Anda jika verifikasi aktif, atau langsung masuk.';
+              if (data.session) {
+                this.currentUser = data.user;
+              }
+            }
+          } catch (err) {
+            this.authError = err.message || 'Terjadi kesalahan saat otentikasi.';
+          } finally {
+            this.authLoading = false;
+          }
+        },
+
+        async handleLogout() {
+          if (this.supabaseClient) {
+            await this.supabaseClient.auth.signOut();
+          }
+          this.currentUser = null;
+          this.scopeFilter = 'all';
+        },
+
+        // Form Upload State
+        isDragging: false,
+        uploadMessage: { text: '', type: 'success' },
+        isEditingId: null,
+        uploadForm: {
+          title: '',
+          author: '',
+          authorBio: '',
+          authorPhoto: '',
+          authorPhotoFile: null,
+          foreword: '',
+          introduction: '',
+          glossary: '',
+          bibliography: '',
+          category: 'Teknologi & AI',
+          accessType: 'Gratis',
+          price: 0,
+          isPrivate: 'false',
+          coverUrl: '',
+          coverFile: null,
+          external_link: '',
+          blurb: '',
+          chapters: [
+            { title: '', content: '' }
+          ],
+          file: null,
+          fileName: '',
+          fileSize: '',
+          fileExtension: '',
+          fileUrl: ''
+        },
+
+        addChapter() {
+          this.uploadForm.chapters.push({ title: '', content: '' });
+        },
+
+        removeChapter(index) {
+          if (this.uploadForm.chapters.length > 1) {
+            this.uploadForm.chapters.splice(index, 1);
+          }
+        },
+
+        // Data Katalogs
+        catalog: [],
+         
+
+        // Getter Computed untuk memfilter dan mengurutkan buku secara otomatis
+        get filteredBooks() {
+          return this.catalog.filter(book => {
+            // Filter Lingkup Koleksi (Semua Koleksi vs Buku Saya)
+            if (this.scopeFilter === 'my-books') {
+              if (!this.currentUser || book.userId !== this.currentUser.id) return false;
+            }
+
+            // Filter Kategori
+            const matchesCategory = this.selectedCategory === 'Semua' || book.category === this.selectedCategory;
+
+            // Filter Tipe Akses
+            const matchesAccess = this.selectedAccess === 'Semua' || book.accessType === this.selectedAccess;
+
+            // Filter Penulis
+            const matchesAuthor = this.selectedAuthor === 'Semua Penulis' || book.author === this.selectedAuthor;
+            
+            // Filter Search (Cari berdasarkan Judul ATAU Penulis)
+            const q = this.searchQuery.toLowerCase().trim();
+            const matchesQuery = q === '' || 
+                                 book.title.toLowerCase().includes(q) || 
+                                 book.author.toLowerCase().includes(q);
+
+            return matchesCategory && matchesAccess && matchesAuthor && matchesQuery;
+          }).sort((a, b) => {
+            if (this.sortBy === 'title') return a.title.localeCompare(b.title);
+            if (this.sortBy === 'author') return a.author.localeCompare(b.author);
+            if (this.sortBy === 'newest') return new Date(b.createdAt) - new Date(a.createdAt);
+            return 0;
+          });
+        },
+
+        handleFileChange(event) {
+          const files = event.target.files;
+          if (files && files.length > 0) {
+            this.processSelectedFile(files[0]);
+          }
+        },
+
+        handleFileDrop(event) {
+          this.isDragging = false;
+          const files = event.dataTransfer.files;
+          if (files && files.length > 0) {
+            this.processSelectedFile(files[0]);
+          }
+        },
+
+        processSelectedFile(file) {
+          const MAX_DOC_SIZE_MB = 15;
+          if (file.size > MAX_DOC_SIZE_MB * 1024 * 1024) {
+            alert(`Ukuran berkas melebihi batas maksimal ${MAX_DOC_SIZE_MB} MB.`);
+            this.clearFile();
+            return;
+          }
+
+          this.uploadForm.file = file;
+          this.uploadForm.fileName = file.name;
+          
+          const sizeInKB = (file.size / 1024).toFixed(1);
+          this.uploadForm.fileSize = file.size > 1024 * 1024 
+            ? `${(file.size / (1024 * 1024)).toFixed(2)} MB` 
+            : `${sizeInKB} KB`;
+
+          const ext = file.name.split('.').pop().toUpperCase();
+          this.uploadForm.fileExtension = ext;
+
+          // Jika judul masih kosong, isi otomatis dari nama file
+          if (!this.uploadForm.title) {
+            const cleanName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+            this.uploadForm.title = cleanName.replace(/[-_]/g, ' ');
+          }
+
+          // Jika file teks atau markdown, baca isi teks secara instan
+          const textExtensions = ['txt', 'md', 'markdown', 'html', 'json'];
+          const fileExtLower = file.name.split('.').pop().toLowerCase();
+          if (textExtensions.includes(fileExtLower)) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const text = e.target.result;
+              if (this.uploadForm.chapters.length > 0 && !this.uploadForm.chapters[0].content) {
+                this.uploadForm.chapters[0].content = `<p>${text.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p>`;
+              }
+            };
+            reader.readAsText(file);
+          }
+        },
+
+        handleCoverUpload(event) {
+          const file = event.target.files[0];
+          if (file) {
+            const MAX_IMG_SIZE_MB = 2;
+            if (file.size > MAX_IMG_SIZE_MB * 1024 * 1024) {
+              alert(`Ukuran gambar sampul melebihi ${MAX_IMG_SIZE_MB} MB.`);
+              event.target.value = '';
+              return;
+            }
+
+            if (!file.type.startsWith('image/')) {
+              alert('Silakan pilih berkas gambar yang valid (JPG, PNG, WebP).');
+              return;
+            }
+            this.uploadForm.coverFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              this.uploadForm.coverUrl = e.target.result;
+            };
+            reader.readAsDataURL(file);
+          }
+        },
+
+        handleAuthorPhotoUpload(event) {
+          const file = event.target.files[0];
+          if (file) {
+            const MAX_IMG_SIZE_MB = 2;
+            if (file.size > MAX_IMG_SIZE_MB * 1024 * 1024) {
+              alert(`Ukuran foto penulis melebihi ${MAX_IMG_SIZE_MB} MB.`);
+              event.target.value = '';
+              return;
+            }
+            if (!file.type.startsWith('image/')) {
+              alert('Silakan pilih berkas gambar yang valid (JPG, PNG, WebP).');
+              return;
+            }
+            this.uploadForm.authorPhotoFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              this.uploadForm.authorPhoto = e.target.result;
+            };
+            reader.readAsDataURL(file);
+          }
+        },
+
+        handleEditAuthorPhotoUpload(event) {
+          const file = event.target.files[0];
+          if (file) {
+            const MAX_IMG_SIZE_MB = 2;
+            if (file.size > MAX_IMG_SIZE_MB * 1024 * 1024) {
+              alert(`Ukuran foto penulis melebihi ${MAX_IMG_SIZE_MB} MB.`);
+              event.target.value = '';
+              return;
+            }
+            if (!file.type.startsWith('image/')) {
+              alert('Silakan pilih berkas gambar yang valid (JPG, PNG, WebP).');
+              return;
+            }
+            this.editForm.authorPhotoFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              this.editForm.authorPhoto = e.target.result;
+            };
+            reader.readAsDataURL(file);
+          }
+        },
+
+        clearFile() {
+          this.uploadForm.file = null;
+          this.uploadForm.fileName = '';
+          this.uploadForm.fileSize = '';
+          this.uploadForm.fileExtension = '';
+          this.uploadForm.fileUrl = '';
+          if (this.$refs.fileInput) {
+            this.$refs.fileInput.value = '';
+          }
+        },
+
+        async uploadToStorage(bucketName, filePath, file) {
+          const { error: uploadError } = await this.supabaseClient.storage
+            .from(bucketName)
+            .upload(filePath, file, {
+              cacheControl: '3600',
+              upsert: true
+            });
+
+          if (uploadError) {
+            throw new Error(`Unggah berkas [${filePath}] gagal: ${uploadError.message}`);
+          }
+
+          const { data } = this.supabaseClient.storage
+            .from(bucketName)
+            .getPublicUrl(filePath);
+
+          return data?.publicUrl || '';
+        },
+
+        async saveNewBook() {
+          const preliminaryChapters = [];
+          if (this.uploadForm.foreword && this.uploadForm.foreword.trim()) {
+            preliminaryChapters.push({
+              title: 'Kata Pengantar',
+              content: `<p>${this.uploadForm.foreword.trim().replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p>`
+            });
+          }
+          if (this.uploadForm.introduction && this.uploadForm.introduction.trim()) {
+            preliminaryChapters.push({
+              title: 'Pendahuluan',
+              content: `<p>${this.uploadForm.introduction.trim().replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p>`
+            });
+          }
+
+          const userChapters = this.uploadForm.chapters
+            .filter(chap => chap.title.trim() || chap.content.trim())
+            .map((chap, idx) => ({
+              title: chap.title.trim() || `Bab ${idx + 1}: ${this.uploadForm.title.trim() || 'Materi'}`,
+              content: chap.content.trim() || (idx === 0 
+                ? `<p>${this.uploadForm.blurb.trim()}</p><p class="text-xs text-slate-500 mt-4 italic">Dokumen terlampir: ${this.uploadForm.fileName || 'Tidak ada file fisik'}</p>`
+                : '<p class="text-slate-400 italic">Konten bab ini belum tersedia.</p>')
+            }));
+
+          const concludingChapters = [];
+          if (this.uploadForm.glossary && this.uploadForm.glossary.trim()) {
+            concludingChapters.push({
+              title: 'Glosarium',
+              content: `<p>${this.uploadForm.glossary.trim().replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p>`
+            });
+          }
+          if (this.uploadForm.bibliography && this.uploadForm.bibliography.trim()) {
+            concludingChapters.push({
+              title: 'Daftar Pustaka',
+              content: `<p>${this.uploadForm.bibliography.trim().replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p>`
+            });
+          }
+
+          let formattedChapters = [...preliminaryChapters, ...userChapters, ...concludingChapters];
+          if (formattedChapters.length === 0) {
+            formattedChapters = [{
+              title: `Bab 1: Pengantar ${this.uploadForm.title.trim() || 'Materi'}`,
+              content: `<p>${this.uploadForm.blurb.trim()}</p><p class="text-xs text-slate-500 mt-4 italic">Dokumen terlampir: ${this.uploadForm.fileName || 'Tidak ada file fisik'}</p>`
+            }];
+          }
+
+          if (this.isEditingId) {
+            // Mode Pembaharuan (Update) Data Buku yang Ada
+            const targetId = this.isEditingId;
+            if (this.supabaseClient) {
+              this.isSaving = true;
+              try {
+                let coverUrlToSave = this.uploadForm.coverUrl || '';
+                if (this.uploadForm.coverFile) {
+                  const cleanCoverName = this.uploadForm.coverFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+                  const coverPath = `covers/${Date.now()}_${cleanCoverName}`;
+                  const uploadedCoverUrl = await this.uploadToStorage(SUPABASE_STORAGE_BUCKET, coverPath, this.uploadForm.coverFile);
+                  if (uploadedCoverUrl) this.uploadForm.coverUrl = uploadedCoverUrl;
+                }
+
+                let authorPhotoToSave = this.uploadForm.authorPhoto ? this.uploadForm.authorPhoto.trim() : null;
+                if (this.uploadForm.authorPhotoFile) {
+                  const cleanPhotoName = this.uploadForm.authorPhotoFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+                  const photoPath = `authors/${Date.now()}_${cleanPhotoName}`;
+                  const uploadedPhotoUrl = await this.uploadToStorage(SUPABASE_STORAGE_BUCKET, photoPath, this.uploadForm.authorPhotoFile);
+                  if (uploadedPhotoUrl) this.uploadForm.authorPhoto = uploadedPhotoUrl;
+                }
+
+                let fileUrlToSave = this.uploadForm.fileUrl || null;
+                if (this.uploadForm.file) {
+                  const cleanDocName = this.uploadForm.file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+                  const docPath = `documents/${Date.now()}_${cleanDocName}`;
+                  const uploadedDocUrl = await this.uploadToStorage(SUPABASE_STORAGE_BUCKET, docPath, this.uploadForm.file);
+                  if (uploadedDocUrl) this.uploadForm.fileUrl = uploadedDocUrl;
+                }
+
+                const updatePayload = {
+                  title: this.uploadForm.title.trim(),
+                  author: this.uploadForm.author.trim(),
+                  author_bio: this.uploadForm.authorBio?.trim() || null,
+                  author_photo: this.uploadForm.authorPhoto?.trim() || null,
+                  category: this.uploadForm.category,
+                  access_type: this.uploadForm.accessType,
+                  price: this.uploadForm.accessType === 'Berbayar' ? Number(this.uploadForm.price) || 0 : 0,
+                  is_private: this.uploadForm.isPrivate === 'true',
+                  cover_url: this.uploadForm.coverUrl || '',
+                  blurb: this.uploadForm.blurb.trim(),
+                  external_link: this.uploadForm.external_link?.trim() || null,
+                  file_url: this.uploadForm.fileUrl || fileUrlToSave,
+                  file_name: this.uploadForm.fileName || null
+                };
+
+                await this.supabaseClient.from('books').update(updatePayload).eq('id', targetId);
+
+                // Sinkronkan bab terbaru ke tabel chapters di Supabase
+                await this.supabaseClient.from('chapters').delete().eq('book_id', targetId);
+                const updatedChapterRows = formattedChapters.map((chap, index) => ({
+                  book_id: targetId,
+                  title: chap.title,
+                  content: chap.content,
+                  chapter_order: index + 1,
+                  is_preview: index === 0 || this.uploadForm.accessType !== 'Berbayar'
+                }));
+                await this.supabaseClient.from('chapters').insert(updatedChapterRows);
+                
+                await this.fetchBooks();
+              } catch (err) {
+                this.uploadMessage = { text: 'Gagal memperbarui: ' + err.message, type: 'error' };
+                this.isSaving = false;
+                return;
+              } finally {
+                this.isSaving = false;
+              }
+            }
+
+            const bookIdx = this.catalog.findIndex(b => b.id === targetId);
+            if (bookIdx !== -1) {
+              this.catalog[bookIdx].title = this.uploadForm.title.trim();
+              this.catalog[bookIdx].author = this.uploadForm.author.trim();
+              this.catalog[bookIdx].chapters = formattedChapters;
+              this.catalog[bookIdx].blurb = this.uploadForm.blurb.trim();
+              this.catalog[bookIdx].price = Number(this.uploadForm.price) || 0;
+              this.catalog[bookIdx].coverUrl = this.uploadForm.coverUrl;
+              this.catalog[bookIdx].external_link = this.uploadForm.external_link;
+              this.catalog[bookIdx].fileUrl = this.uploadForm.fileUrl;
+              this.catalog[bookIdx].fileName = this.uploadForm.fileName;
+            }
+            this.cancelEditMode();
+            this.goToCatalog();
+            return;
+          }
+
+          const newBook = {
+            id: 'book-' + Date.now(),
+            userId: this.currentUser?.id || null,
+            title: this.uploadForm.title.trim(),
+            author: this.uploadForm.author.trim(),
+            authorBio: this.uploadForm.authorBio ? this.uploadForm.authorBio.trim() : null,
+            authorPhoto: this.uploadForm.authorPhoto ? this.uploadForm.authorPhoto.trim() : null,
+            category: this.uploadForm.category,
+            accessType: this.uploadForm.accessType,
+            price: this.uploadForm.accessType === 'Berbayar' ? Number(this.uploadForm.price) || 0 : 0,
+            createdAt: new Date().toISOString().split('T')[0],
+            blurb: this.uploadForm.blurb.trim(),
+            isPrivate: this.uploadForm.isPrivate === 'true',
+            coverUrl: this.uploadForm.coverUrl.trim() || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80',
+            external_link: this.uploadForm.external_link.trim() || null,
+            fileName: this.uploadForm.fileName || null,
+            fileUrl: this.uploadForm.fileUrl || null,
+            chapters: formattedChapters
+          };
+
+          // Simpan ke Supabase jika client aktif
+          if (this.supabaseClient) {
+            this.isSaving = true;
+            try {
+              // 1. Unggah Gambar Sampul ke Supabase Storage jika ada file lokal
+              if (this.uploadForm.coverFile) {
+                const cleanCoverName = this.uploadForm.coverFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+                const coverPath = `covers/${Date.now()}_${cleanCoverName}`;
+                const uploadedCoverUrl = await this.uploadToStorage(SUPABASE_STORAGE_BUCKET, coverPath, this.uploadForm.coverFile);
+                if (uploadedCoverUrl) {
+                  newBook.coverUrl = uploadedCoverUrl;
+                }
+              }
+
+              // 2b. Unggah Foto Penulis ke Supabase Storage jika ada berkas lokal
+              if (this.uploadForm.authorPhotoFile) {
+                const cleanPhotoName = this.uploadForm.authorPhotoFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+                const photoPath = `authors/${Date.now()}_${cleanPhotoName}`;
+                const uploadedPhotoUrl = await this.uploadToStorage(SUPABASE_STORAGE_BUCKET, photoPath, this.uploadForm.authorPhotoFile);
+                if (uploadedPhotoUrl) {
+                  newBook.authorPhoto = uploadedPhotoUrl;
+                }
+              }
+
+              // 2. Unggah Dokumen Berkas Buku ke Supabase Storage jika ada file
+              if (this.uploadForm.file) {
+                const cleanDocName = this.uploadForm.file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+                const docPath = `documents/${Date.now()}_${cleanDocName}`;
+                const uploadedDocUrl = await this.uploadToStorage(SUPABASE_STORAGE_BUCKET, docPath, this.uploadForm.file);
+                if (uploadedDocUrl) {
+                  newBook.fileUrl = uploadedDocUrl;
+                }
+              }
+
+              // 3. Simpan Metadata ke Supabase Table 'books'
+              const bookPayload = {
+                title: newBook.title,
+                author: newBook.author,
+                author_bio: newBook.authorBio,
+                author_photo: newBook.authorPhoto,
+                category: newBook.category,
+                access_type: newBook.accessType,
+                price: newBook.price,
+                is_private: newBook.isPrivate,
+                cover_url: newBook.coverUrl,
+                blurb: newBook.blurb
+              };
+
+              if (this.currentUser?.id) bookPayload.user_id = this.currentUser.id;
+              if (newBook.external_link) bookPayload.external_link = newBook.external_link;
+              if (newBook.fileUrl) bookPayload.file_url = newBook.fileUrl;
+              if (newBook.fileName) bookPayload.file_name = newBook.fileName;
+
+              const { data, error } = await this.supabaseClient
+                .from('books')
+                .insert([bookPayload])
+                .select()
+                .single();
+
+              // Fallback jika kolom author_bio / author_photo belum dibuat di tabel Supabase
+              if (error && (error.message?.includes('author_bio') || error.message?.includes('author_photo'))) {
+                delete bookPayload.author_bio;
+                delete bookPayload.author_photo;
+                const retry = await this.supabaseClient
+                  .from('books')
+                  .insert([bookPayload])
+                  .select()
+                  .single();
+                data = retry.data;
+                error = retry.error;
+              }
+
+              if (error) throw error;
+              if (data) {
+                newBook.id = String(data.id);
+
+                // Simpan daftar bab ke tabel chapters terpisah
+                const chapterRows = newBook.chapters.map((chap, index) => ({
+                  book_id: data.id,
+                  title: chap.title,
+                  content: chap.content,
+                  chapter_order: index + 1,
+                  is_preview: index === 0 || newBook.accessType !== 'Berbayar'
+                }));
+
+                await this.supabaseClient
+                  .from('chapters')
+                  .insert(chapterRows);
+              }
+            } catch (err) {
+              const detailedError = err?.message || err?.details || JSON.stringify(err);
+              console.error('Supabase upload/insert error:', detailedError, err);
+              this.uploadMessage = { text: 'Gagal menyimpan ke database Supabase: ' + detailedError, type: 'error' };
+              this.isSaving = false;
+              return;
+            } finally {
+              this.isSaving = false;
+            }
+          }
+
+          this.catalog.unshift(newBook);
+          this.clearFile();
+          this.uploadForm.title = '';
+          this.uploadForm.author = '';
+          this.uploadForm.authorBio = '';
+          this.uploadForm.authorPhoto = '';
+          this.uploadForm.authorPhotoFile = null;
+          this.uploadForm.foreword = '';
+          this.uploadForm.introduction = '';
+          this.uploadForm.glossary = '';
+          this.uploadForm.bibliography = '';
+          this.uploadForm.blurb = '';
+          this.uploadForm.accessType = 'Gratis';
+          this.uploadForm.price = 0;
+          this.uploadForm.coverUrl = '';
+          this.uploadForm.coverFile = null;
+          this.uploadForm.external_link = '';
+          this.uploadForm.fileUrl = '';
+          this.uploadForm.chapters = [{ title: '', content: '' }];
+          this.currentView = 'catalog';
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        },
+
+        extractStoragePath(publicUrl, bucketName) {
+          if (!publicUrl || !publicUrl.includes(bucketName)) return null;
+          try {
+            const marker = `/${bucketName}/`;
+            const index = publicUrl.indexOf(marker);
+            return index !== -1 ? decodeURIComponent(publicUrl.substring(index + marker.length)) : null;
+          } catch (e) {
+            return null;
+          }
+        },
+
+        getAuthorInitials(name) {
+          if (!name) return 'WB';
+          return name
+            .split(' ')
+            .filter(Boolean)
+            .slice(0, 2)
+            .map(part => part[0].toUpperCase())
+            .join('');
+        },
+
+        getSanitizedContent(rawHtml) {
+          if (!rawHtml) return '<p class="text-slate-400 italic">Tidak ada isi konten pada bab ini.</p>';
+          return typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(rawHtml, { ADD_ATTR: ['target'] }) : rawHtml;
+        },
+
+        getEmbedUrl(url) {
+          if (!url) return '';
+          const lower = url.toLowerCase();
+          return (lower.endsWith('.pdf') || lower.includes('.pdf?')) 
+            ? url 
+            : `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+        },
+
+        async deleteBook(book) {
+          if (!confirm(`Apakah Anda yakin ingin menghapus buku "${book.title}"?`)) {
+            return;
+          }
+
+          if (this.supabaseClient) {
+            try {
+              // 1. Bersihkan file cover & berkas dokumen terkait dari Supabase Storage
+              const filesToRemove = [];
+              const coverPath = this.extractStoragePath(book.coverUrl, SUPABASE_STORAGE_BUCKET);
+              const filePath = this.extractStoragePath(book.fileUrl, SUPABASE_STORAGE_BUCKET);
+              
+              if (coverPath) filesToRemove.push(coverPath);
+              if (filePath) filesToRemove.push(filePath);
+
+              if (filesToRemove.length > 0) {
+                await this.supabaseClient.storage
+                  .from(SUPABASE_STORAGE_BUCKET)
+                  .remove(filesToRemove);
+              }
+
+              // 2. Hapus metadata dari tabel database
+              const { error } = await this.supabaseClient
+                .from('books')
+                .delete()
+                .eq('id', book.id);
+              if (error) throw error;
+            } catch (err) {
+              alert('Gagal menghapus buku: ' + err.message);
+              return;
+            }
+          }
+
+          this.catalog = this.catalog.filter(b => b.id !== book.id);
+          if (this.activeBook?.id === book.id) {
+            this.closeReader();
+          }
+        },
+
+        openEditModal(book) {
+          this.editForm = {
+            originalBook: book,
+            category: book.category || 'Teknologi & AI',
+            id: book.id,
+            title: book.title,
+            author: book.author || '',
+            authorBio: book.authorBio || '',
+            authorPhoto: book.authorPhoto || '',
+            authorPhotoFile: null,
+            blurb: book.blurb,
+            price: book.price || 0,
+            external_link: book.external_link || ''
+          };
+          this.isEditModalOpen = true;
+        },
+
+        async editInFullForm() {
+          const b = this.editForm.originalBook;
+          if (!b) return;
+          this.isEditingId = b.id;
+          this.uploadForm = {
+            title: b.title || '',
+            author: b.author || '',
+            authorBio: b.authorBio || '',
+            authorPhoto: b.authorPhoto || '',
+            authorPhotoFile: null,
+            foreword: '',
+            introduction: '',
+            glossary: '',
+            bibliography: '',
+            category: b.category || 'Teknologi & AI',
+            accessType: b.accessType || 'Gratis',
+            price: b.price || 0,
+            isPrivate: b.isPrivate ? 'true' : 'false',
+            coverUrl: b.coverUrl || '',
+            coverFile: null,
+            external_link: b.external_link || '',
+            blurb: b.blurb || '',
+            chapters: b.chapters && b.chapters.length ? JSON.parse(JSON.stringify(b.chapters)) : [{ title: '', content: '' }],
+            file: null,
+            fileName: b.fileName || '',
+            fileSize: '',
+            fileExtension: '',
+            fileUrl: b.fileUrl || ''
+          };
+          this.closeEditModal();
+          this.currentView = 'upload';
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+
+          // Ambil bab aktual dari Supabase jika ada agar bab sebelumnya tidak hilang
+          const isNumericId = /^\d+$/.test(String(b.id));
+          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(b.id));
+          if (this.supabaseClient && (isNumericId || isUuid)) {
+            try {
+              const { data, error } = await this.supabaseClient
+                .from('chapters')
+                .select('id, title, content, chapter_order, is_preview')
+                .eq('book_id', b.id)
+                .order('chapter_order', { ascending: true });
+
+              if (!error && data && data.length > 0) {
+                this.uploadForm.chapters = data.map(ch => ({
+                  title: ch.title || '',
+                  content: ch.content || ''
+                }));
+              }
+            } catch (err) {
+              console.error('Gagal mengambil bab sebelumnya:', err);
+            }
+          }
+        },
+
+        cancelEditMode() {
+          this.isEditingId = null;
+          this.clearFile();
+          this.uploadForm.title = '';
+          this.uploadForm.author = '';
+          this.uploadForm.authorBio = '';
+          this.uploadForm.authorPhoto = '';
+          this.uploadForm.authorPhotoFile = null;
+          this.uploadForm.foreword = '';
+          this.uploadForm.introduction = '';
+          this.uploadForm.glossary = '';
+          this.uploadForm.bibliography = '';
+          this.uploadForm.blurb = '';
+          this.uploadForm.coverUrl = '';
+          this.uploadForm.coverFile = null;
+          this.uploadForm.external_link = '';
+          this.uploadForm.fileUrl = '';
+          this.uploadForm.chapters = [{ title: '', content: '' }];
+        },
+
+        closeEditModal() {
+          if (this.isUpdatingBook) return;
+          this.isEditModalOpen = false;
+          this.editForm.authorPhotoFile = null;
+        },
+
+        async updateBook() {
+          if (!this.editForm.title.trim() || !this.editForm.author.trim()) return;
+          this.isUpdatingBook = true;
+          const isNumericId = /^\d+$/.test(String(this.editForm.id));
+          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(this.editForm.id));
+          const canSyncRemote = Boolean(this.supabaseClient && (isNumericId || isUuid));
+
+          try {
+            let uploadedPhotoUrl = this.editForm.authorPhoto;
+            if (this.supabaseClient && this.editForm.authorPhotoFile) {
+              const cleanPhotoName = this.editForm.authorPhotoFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+              const photoPath = `authors/${Date.now()}_${cleanPhotoName}`;
+              const resUrl = await this.uploadToStorage(SUPABASE_STORAGE_BUCKET, photoPath, this.editForm.authorPhotoFile);
+              if (resUrl) {
+                uploadedPhotoUrl = resUrl;
+              }
+            }
+
+            const payload = {
+              title: this.editForm.title.trim(),
+              author: this.editForm.author.trim(),
+              author_bio: this.editForm.authorBio ? this.editForm.authorBio.trim() : null,
+              author_photo: uploadedPhotoUrl ? uploadedPhotoUrl.trim() : null,
+              blurb: this.editForm.blurb.trim(),
+              price: Number(this.editForm.price) || 0,
+              external_link: this.editForm.external_link ? this.editForm.external_link.trim() : null
+            };
+
+            if (this.supabaseClient) {
+              let { error } = await this.supabaseClient
+                .from('books')
+                .update(payload)
+                .eq('id', this.editForm.id);
+
+              // Fallback jika kolom author_bio / author_photo belum tersedia di tabel Supabase
+              if (error && (error.message?.includes('author_bio') || error.message?.includes('author_photo'))) {
+                delete payload.author_bio;
+                delete payload.author_photo;
+                const retry = await this.supabaseClient
+                  .from('books')
+                  .update(payload)
+                  .eq('id', this.editForm.id);
+                error = retry.error;
+              }
+
+              // Fallback otomatis saat update jika kolom external_link belum tersedia
+              if (error && (error.message?.includes('external_link') || error.details?.includes('external_link'))) {
+                delete payload.external_link;
+                const retry = await this.supabaseClient
+                  .from('books')
+                  .update(payload)
+                  .eq('id', this.editForm.id);
+                error = retry.error;
+              }
+              if (error) throw error;
+            }
+
+            const bookIndex = this.catalog.findIndex(b => b.id === this.editForm.id);
+            if (bookIndex !== -1) {
+              this.catalog[bookIndex].title = payload.title;
+              this.catalog[bookIndex].author = payload.author;
+              this.catalog[bookIndex].authorBio = payload.author_bio;
+              this.catalog[bookIndex].authorPhoto = payload.author_photo;
+              this.catalog[bookIndex].blurb = payload.blurb;
+              this.catalog[bookIndex].price = payload.price;
+              this.catalog[bookIndex].external_link = payload.external_link;
+            }
+
+            if (this.activeBook?.id === this.editForm.id) {
+              this.activeBook.title = payload.title;
+              this.activeBook.author = payload.author;
+              this.activeBook.authorBio = payload.author_bio;
+              this.activeBook.authorPhoto = payload.author_photo;
+              this.activeBook.blurb = payload.blurb;
+              this.activeBook.price = payload.price;
+              this.activeBook.external_link = payload.external_link;
+            }
+
+            this.closeEditModal();
+          } catch (err) {
+            alert('Gagal memperbarui buku: ' + err.message);
+          } finally {
+            this.isUpdatingBook = false;
+          }
+        },
+
+        resetFilters() {
+          this.scopeFilter = 'all';
+          this.searchQuery = '';
+          this.selectedCategory = 'Semua';
+          this.selectedAccess = 'Semua';
+          this.selectedAuthor = 'Semua Penulis';
+          this.sortBy = 'newest';
+        },
+
+        goToCatalog() {
+          this.closeReader();
+          this.currentView = 'catalog';
+        },
+
+        handleBookClick(book) {
+          this.openBook(book);
+        },
+
+        startReading(chapterIndex = 0) {
+          if (this.activeBook?.accessType === 'Berbayar' && !this.purchasedBookIds.includes(this.activeBook.id) && chapterIndex > 0) {
+            this.openPaymentModal(this.activeBook);
+            return;
+          }
+          this.currentChapterIndex = chapterIndex;
+          this.readerTab = 'text';
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        },
+
+        selectChapterFromDrawer(chapterIndex) {
+          this.stopTTS();
+          this.isTocDrawerOpen = false;
+          this.startReading(chapterIndex);
+        },
+
+        async openBook(book) {
+          this.activeBook = { ...book, chapters: book.chapters ? [...book.chapters] : [] };
+          this.currentChapterIndex = 0;
+          this.isEmbedFullscreen = false;
+          this.readerTab = book.external_link ? 'external' : 'overview';
+
+          // Cek apakah ID buku valid untuk Supabase (angka/UUID) agar tidak request 400 pada buku dummy
+          const isNumericId = /^\d+$/.test(String(book.id));
+          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(book.id));
+
+          if (this.supabaseClient && (isNumericId || isUuid)) {
+            this.isLoadingChapters = true;
+            try {
+              const { data, error } = await this.supabaseClient
+                .from('chapters')
+                .select('id, title, content, chapter_order, is_preview')
+                .eq('book_id', book.id)
+                .order('chapter_order', { ascending: true });
+
+              if (!error && data && data.length > 0) {
+                this.activeBook.chapters = data;
+              }
+            } catch (err) {
+              console.error('Gagal memuat bab:', err);
+            } finally {
+              this.isLoadingChapters = false;
+            }
+          }
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        },
+
+        closeReader() {
+          this.stopTTS();
+          this.isTocDrawerOpen = false;
+          this.isEmbedFullscreen = false;
+          this.readerTab = 'overview';
+          this.activeBook = null;
+        },
+
+        openPaymentModal(book) {
+          this.checkoutBook = book;
+          this.selectedPaymentMethod = 'qris';
+          this.isProcessingPayment = false;
+          this.isPaymentModalOpen = true;
+        },
+
+        closePaymentModal() {
+          if (this.isProcessingPayment) return;
+          this.isPaymentModalOpen = false;
+          this.checkoutBook = null;
+        },
+
+        async processPayment() {
+          this.isProcessingPayment = true;
+
+          const selectedMethodObj = this.paymentMethods.find(m => m.id === this.selectedPaymentMethod);
+          const methodName = selectedMethodObj ? selectedMethodObj.name : 'Transfer Manual';
+          const userEmail = this.currentUser?.email || 'Tamu / Belum Login';
+          const formattedPrice = this.formatCurrency(this.checkoutBook?.price);
+
+          const waText = `Halo Admin Pustaka WebBook,\n\nSaya ingin mengonfirmasi pembelian buku:\n📖 *Judul*: ${this.checkoutBook?.title}\n✍️ *Penulis*: ${this.checkoutBook?.author}\n💰 *Harga*: ${formattedPrice}\n💳 *Metode*: ${methodName}\n👤 *Akun*: ${userEmail}\n\nMohon petunjuk pembayaran dan aktivasi akses buku saya. Terima kasih!`;
+          const waUrl = `https://wa.me/${this.adminWaNumber}?text=${encodeURIComponent(waText)}`;
+          
+          if (this.supabaseClient && this.currentUser && this.checkoutBook) {
+            try {
+              await this.supabaseClient.from('purchases').upsert([{
+                user_id: this.currentUser.id,
+                book_id: this.checkoutBook.id
+              }], { onConflict: 'user_id,book_id' });
+            } catch (err) {
+              console.error('Gagal mencatat transaksi di Supabase:', err);
+            }
+          }
+
+          setTimeout(() => {
+            if (this.checkoutBook) {
+              if (!this.purchasedBookIds.includes(this.checkoutBook.id)) {
+                this.purchasedBookIds.push(this.checkoutBook.id);
+                localStorage.setItem('purchasedBookIds', JSON.stringify(this.purchasedBookIds));
+              }
+              const bookToOpen = this.checkoutBook;
+              this.isProcessingPayment = false;
+              this.isPaymentModalOpen = false;
+
+              // Buka WhatsApp di tab baru
+              window.open(waUrl, '_blank');
+              this.openBook(bookToOpen);
+            }
+          }, 1200);
+        },
+
+        formatCurrency(amount) {
+          if (!amount || isNaN(amount)) return 'Rp 0';
+          return 'Rp ' + Number(amount).toLocaleString('id-ID');
+        },
+
+        nextChapter() {
+          if (this.activeBook && this.currentChapterIndex < this.activeBook.chapters.length - 1) {
+            if (this.activeBook.accessType === 'Berbayar' && !this.purchasedBookIds.includes(this.activeBook.id)) {
+              this.openPaymentModal(this.activeBook);
+              return;
+            }
+            this.stopTTS();
+            this.currentChapterIndex++;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        },
+
+        prevChapter() {
+          if (this.currentChapterIndex > 0) {
+            this.stopTTS();
+            this.currentChapterIndex--;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        },
+
+        toggleTTS() {
+          if (this.isSpeaking) {
+            this.stopTTS();
+          } else {
+            this.startTTS();
+          }
+        },
+
+        startTTS() {
+          if (!('speechSynthesis' in window)) {
+            alert('Browser Anda belum mendukung fitur Text-to-Speech.');
+            return;
+          }
+
+          this.stopTTS();
+
+          const rawHtml = this.activeBook.chapters[this.currentChapterIndex].content;
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = rawHtml;
+          const textToRead = tempDiv.innerText || tempDiv.textContent;
+
+          const utterance = new SpeechSynthesisUtterance(textToRead);
+          utterance.lang = 'id-ID';
+          utterance.rate = 0.95;
+
+          utterance.onend = () => { this.isSpeaking = false; };
+          utterance.onerror = () => { this.isSpeaking = false; };
+
+          this.synth.speak(utterance);
+          this.isSpeaking = true;
+        },
+
+        stopTTS() {
+          if (this.synth) {
+            this.synth.cancel();
+          }
+          this.isSpeaking = false;
+        }
+      }
+    }
+  </script>
+</body>
+</html>
