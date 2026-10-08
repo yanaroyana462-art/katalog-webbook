@@ -152,6 +152,14 @@
           <svg x-show="darkMode" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 9H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
         </button>
 
+        <template x-if="currentUser">
+          <button @click="openProfileModal()" type="button" 
+                  class="px-2.5 sm:px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-stone-50 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-200 border border-stone-200 dark:border-slate-700 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
+            <svg class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+            <span class="hidden sm:inline">Profil Saya</span>
+          </button>
+        </template>
+
         <template x-if="currentView === 'catalog' && !activeBook">
           <button @click="currentView = 'upload'" class="px-3 sm:px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 shadow-sm shadow-indigo-600/20 hover:shadow flex-shrink-0">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -1582,6 +1590,104 @@
   </div>
 
   <!-- ========================================== -->
+  <!-- MODAL EDIT PROFIL SAYA (PENULIS)           -->
+  <!-- ========================================== -->
+  <div x-show="isProfileModalOpen" x-cloak 
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+       x-transition:enter="transition ease-out duration-200"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-150"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0">
+
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative"
+         @click.outside="if(!isUpdatingProfile) closeProfileModal()"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div>
+          <h3 class="text-base font-bold text-slate-900 dark:text-white">Profil Penulis Saya</h3>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">Atur nama pena, foto identitas, biografi, dan tautan sosial media Anda.</p>
+        </div>
+        <button @click="closeProfileModal()" :disabled="isUpdatingProfile" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <form @submit.prevent="saveProfileModal()" class="mt-4 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Nama Lengkap / Nama Pena <span class="text-rose-500">*</span></label>
+          <input type="text" x-model="profileForm.author" required placeholder="Contoh: Yana Royana"
+                 class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2 text-xs md:text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 transition" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Foto Profil / Avatar</label>
+          <div class="flex items-center gap-3">
+            <div class="w-14 h-14 rounded-full border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 overflow-hidden flex-shrink-0 flex items-center justify-center relative shadow-sm">
+              <template x-if="profileForm.authorPhoto">
+                <img :src="profileForm.authorPhoto" alt="Avatar Penulis" class="w-full h-full object-cover" />
+              </template>
+              <template x-if="!profileForm.authorPhoto">
+                <svg class="w-7 h-7 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+              </template>
+            </div>
+            <div class="flex-1 space-y-1.5">
+              <div class="flex items-center gap-2">
+                <label class="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium cursor-pointer transition border border-slate-300 dark:border-slate-700 inline-flex items-center gap-1 shadow-sm">
+                  <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                  <span>Pilih Foto</span>
+                  <input type="file" accept="image/*" @change="handleProfilePhotoUpload($event)" class="hidden" />
+                </label>
+                <button type="button" x-show="profileForm.authorPhoto" @click="profileForm.authorPhoto = ''; profileForm.authorPhotoFile = null;" 
+                        class="text-xs text-rose-500 hover:underline">Hapus</button>
+              </div>
+              <input type="url" x-model="profileForm.authorPhoto" placeholder="Atau tempel URL foto (https://...)" 
+                     class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 transition" />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Biografi Singkat / Keahlian</label>
+          <textarea x-model="profileForm.authorBio" rows="3" placeholder="Tuliskan biografi singkat atau bidang spesialisasi Anda..."
+                    class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 transition"></textarea>
+        </div>
+
+        <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">Tautan Media Sosial & Kontak</label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            <input type="text" x-model="profileForm.authorLinks.instagram" placeholder="Instagram (@username)" class="bg-stone-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500" />
+            <input type="text" x-model="profileForm.authorLinks.x" placeholder="X / Twitter (@username)" class="bg-stone-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500" />
+            <input type="text" x-model="profileForm.authorLinks.facebook" placeholder="Facebook (username/URL)" class="bg-stone-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500" />
+            <input type="text" x-model="profileForm.authorLinks.tiktok" placeholder="TikTok (@username)" class="bg-stone-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500" />
+            <input type="text" x-model="profileForm.authorLinks.linkedin" placeholder="LinkedIn (URL profil)" class="bg-stone-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500" />
+            <input type="text" x-model="profileForm.authorLinks.whatsapp" placeholder="WhatsApp (08...)" class="bg-stone-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500" />
+          </div>
+          <input type="url" x-model="profileForm.authorLinks.website" placeholder="Website Pribadi (https://...)" class="w-full bg-stone-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 mt-1" />
+        </div>
+
+        <div class="mt-5 flex gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <button type="button" @click="closeProfileModal()" :disabled="isUpdatingProfile"
+                  class="w-1/3 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition">
+            Batal
+          </button>
+          <button type="submit" :disabled="isUpdatingProfile"
+                  class="w-2/3 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-75 text-white rounded-xl text-xs font-semibold shadow-md shadow-indigo-600/30 transition flex items-center justify-center gap-2">
+            <template x-if="isUpdatingProfile">
+              <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+            </template>
+            <span x-text="isUpdatingProfile ? 'Menyimpan...' : 'Simpan Profil'"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
   <!-- MODAL DATA PERSONAL & MEDIA SOSIAL PENULIS -->
   <!-- ========================================== -->
   <div x-show="isAuthorSocialModalOpen" x-cloak 
@@ -1910,6 +2016,17 @@
         currentChapterIndex: 0,
         isSpeaking: false,
         synth: window.speechSynthesis,
+
+        // State Modal Edit Profil Saya
+        isProfileModalOpen: false,
+        isUpdatingProfile: false,
+        profileForm: {
+          author: '',
+          authorBio: '',
+          authorPhoto: '',
+          authorPhotoFile: null,
+          authorLinks: { instagram: '', x: '', facebook: '', tiktok: '', linkedin: '', whatsapp: '', website: '' }
+        },
 
         get book() {
           return this.activeBook;
@@ -2283,6 +2400,67 @@
           this.uploadForm.authorPhoto = '';
           this.uploadForm.authorPhotoFile = null;
           this.uploadForm.authorLinks = { instagram: '', x: '', facebook: '', tiktok: '', linkedin: '', whatsapp: '', website: '' };
+        },
+
+        openProfileModal() {
+          this.profileForm = {
+            author: this.uploadForm.author || '',
+            authorBio: this.uploadForm.authorBio || '',
+            authorPhoto: this.uploadForm.authorPhoto || '',
+            authorPhotoFile: null,
+            authorLinks: this.uploadForm.authorLinks 
+              ? JSON.parse(JSON.stringify(this.uploadForm.authorLinks)) 
+              : { instagram: '', x: '', facebook: '', tiktok: '', linkedin: '', whatsapp: '', website: '' }
+          };
+          this.isProfileModalOpen = true;
+        },
+
+        closeProfileModal() {
+          if (this.isUpdatingProfile) return;
+          this.isProfileModalOpen = false;
+          this.profileForm.authorPhotoFile = null;
+        },
+
+        handleProfilePhotoUpload(event) {
+          const file = event.target.files[0];
+          if (file) {
+            if (file.size > 2 * 1024 * 1024) {
+              alert('Ukuran foto profil melebihi 2 MB.');
+              event.target.value = '';
+              return;
+            }
+            this.profileForm.authorPhotoFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => { this.profileForm.authorPhoto = e.target.result; };
+            reader.readAsDataURL(file);
+          }
+        },
+
+        async saveProfileModal() {
+          if (!this.profileForm.author.trim()) return;
+          this.isUpdatingProfile = true;
+          try {
+            let uploadedPhoto = this.profileForm.authorPhoto;
+            if (this.supabaseClient && this.profileForm.authorPhotoFile) {
+              const cleanName = this.profileForm.authorPhotoFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+              const photoPath = `authors/${Date.now()}_${cleanName}`;
+              const res = await this.uploadToStorage(SUPABASE_STORAGE_BUCKET, photoPath, this.profileForm.authorPhotoFile);
+              if (res) uploadedPhoto = res;
+            }
+            const updated = {
+              author: this.profileForm.author.trim(),
+              authorBio: this.profileForm.authorBio ? this.profileForm.authorBio.trim() : '',
+              authorPhoto: uploadedPhoto ? uploadedPhoto.trim() : '',
+              authorLinks: this.profileForm.authorLinks || {}
+            };
+            await this.saveAuthorProfileLocally(updated);
+            await this.loadAuthorProfile();
+            this.closeProfileModal();
+          } catch (err) {
+            alert('Gagal menyimpan profil: ' + err.message);
+          } finally {
+            this.isUpdatingProfile = false;
+          }
         },
 
         // Form Upload State
