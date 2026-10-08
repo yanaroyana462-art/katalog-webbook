@@ -398,6 +398,11 @@
                 </div>
               </template>
 
+              <!-- Tombol Bagikan di Kartu Rak -->
+              <button @click.stop="shareBook(book)" class="p-1.5 text-stone-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-stone-100 dark:hover:bg-slate-800 transition" title="Bagikan Buku">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+              </button>
+
             <button @click="openBook(book)" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-sm shadow-indigo-600/20 transition flex items-center gap-1.5">
               <span>Baca Sekarang</span>
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
@@ -659,6 +664,13 @@
             <textarea x-model="uploadForm.authorBio" rows="3" placeholder="Contoh: Praktisi arsitektur perangkat lunak dan pegiat open-source..."
                       class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"></textarea>
           </div>
+        </div>
+
+        <div class="pt-2 border-t border-slate-200/60 dark:border-slate-800 flex items-center justify-between">
+          <span class="text-[11px] text-slate-500 dark:text-slate-400">Kontak & Media Sosial Penulis</span>
+          <button type="button" @click="openAuthorSocialModal('upload')" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
+            <span>Kelola Media Sosial & Kontak</span>
+          </button>
         </div>
       </div>
 
@@ -1015,6 +1027,13 @@
           <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-indigo-100 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 font-bold" x-text="activeBook?.chapters?.length || 0"></span>
         </button>
 
+        <!-- Tombol Bagikan di Bilah Atas Pembaca -->
+        <button type="button" @click="shareBook(activeBook)" 
+                class="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition" title="Bagikan Buku Ini">
+          <svg class="w-4 h-4 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+          <span class="hidden sm:inline">Bagikan</span>
+        </button>
+
         <div x-show="readerTab === 'text'" class="flex flex-wrap items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
           <button @click="toggleTTS()" 
                   class="px-3 py-1.5 rounded-lg text-xs font-medium border transition flex items-center gap-1.5"
@@ -1080,6 +1099,30 @@
               <p class="text-xs text-stone-600 dark:text-slate-300 mt-1 leading-relaxed" 
                  x-text="activeBook?.authorBio || `Kreator dan praktisi di bidang ${activeBook?.category || 'literasi'}. Berfokus membagikan wawasan dan pengalaman terstruktur melalui karya pustaka digital.`"></p>
             </div>
+            <!-- Tautan Media Sosial & Kontak Penulis -->
+            <div class="flex flex-wrap items-center gap-1.5 pt-2" x-show="hasAuthorLinks(activeBook?.authorLinks)">
+              <template x-if="activeBook?.authorLinks?.instagram">
+                <a :href="formatSocialUrl(activeBook.authorLinks.instagram, 'https://instagram.com/')" target="_blank" rel="noopener noreferrer" class="p-1.5 rounded-lg bg-pink-50 dark:bg-pink-950/40 text-pink-600 dark:text-pink-400 hover:scale-110 transition border border-pink-200/60 dark:border-pink-900/40" title="Instagram">IG</a>
+              </template>
+              <template x-if="activeBook?.authorLinks?.x">
+                <a :href="formatSocialUrl(activeBook.authorLinks.x, 'https://x.com/')" target="_blank" rel="noopener noreferrer" class="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:scale-110 transition border border-slate-300 dark:border-slate-700 font-bold" title="X (Twitter)">X</a>
+              </template>
+              <template x-if="activeBook?.authorLinks?.facebook">
+                <a :href="formatSocialUrl(activeBook.authorLinks.facebook, 'https://facebook.com/')" target="_blank" rel="noopener noreferrer" class="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 hover:scale-110 transition border border-blue-200/60 dark:border-blue-900/40" title="Facebook">FB</a>
+              </template>
+              <template x-if="activeBook?.authorLinks?.tiktok">
+                <a :href="formatSocialUrl(activeBook.authorLinks.tiktok, 'https://tiktok.com/@')" target="_blank" rel="noopener noreferrer" class="p-1.5 rounded-lg bg-stone-100 dark:bg-stone-800 text-stone-900 dark:text-stone-100 hover:scale-110 transition border border-stone-300 dark:border-stone-700 font-bold" title="TikTok">TT</a>
+              </template>
+              <template x-if="activeBook?.authorLinks?.linkedin">
+                <a :href="formatSocialUrl(activeBook.authorLinks.linkedin, 'https://linkedin.com/in/')" target="_blank" rel="noopener noreferrer" class="p-1.5 rounded-lg bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 hover:scale-110 transition border border-sky-200/60 dark:border-sky-900/40 font-bold" title="LinkedIn">in</a>
+              </template>
+              <template x-if="activeBook?.authorLinks?.whatsapp">
+                <a :href="formatWhatsappUrl(activeBook.authorLinks.whatsapp)" target="_blank" rel="noopener noreferrer" class="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 hover:scale-110 transition border border-emerald-200/60 dark:border-emerald-900/40 font-bold" title="WhatsApp">WA</a>
+              </template>
+              <template x-if="activeBook?.authorLinks?.website">
+                <a :href="formatSocialUrl(activeBook.authorLinks.website, 'https://')" target="_blank" rel="noopener noreferrer" class="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:scale-110 transition border border-indigo-200/60 dark:border-indigo-900/40 text-[11px] font-semibold" title="Website / Portofolio">Web</a>
+              </template>
+            </div>
           </div>
 
           <!-- Tombol Masuk ke Halaman Bab -->
@@ -1105,6 +1148,10 @@
             <button @click="startReading(0)" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs md:text-sm font-semibold shadow-md shadow-indigo-600/30 transition flex items-center justify-center gap-2 text-center">
               <span x-text="activeBook?.accessType === 'Berbayar' && !purchasedBookIds.includes(activeBook?.id) ? 'Baca Pratinjau (Bab 1)' : 'Mulai Baca Bab 1'"></span>
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+            </button>
+            <button @click="shareBook(activeBook)" class="px-4 py-2.5 bg-stone-100 hover:bg-stone-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-200 rounded-xl text-xs md:text-sm font-semibold border border-stone-200 dark:border-slate-700 transition flex items-center justify-center gap-2 text-center" title="Bagikan Buku">
+              <svg class="w-4 h-4 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+              <span>Bagikan</span>
             </button>
           </div>
 
@@ -1480,6 +1527,13 @@
             <textarea x-model="editForm.authorBio" rows="2" placeholder="Ringkasan keahlian atau biografi singkat penulis..."
                       class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition"></textarea>
           </div>
+
+          <div class="pt-2 border-t border-slate-200/60 dark:border-slate-800 flex items-center justify-between">
+            <span class="text-[11px] text-slate-500 dark:text-slate-400">Media Sosial & Kontak Penulis</span>
+            <button type="button" @click="openAuthorSocialModal('edit')" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:hover:bg-indigo-900/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 rounded-lg text-xs font-semibold transition">
+              <span>Kelola Kontak & Medsos</span>
+            </button>
+          </div>
         </div>
 
         <div>
@@ -1524,6 +1578,183 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL DATA PERSONAL & MEDIA SOSIAL PENULIS -->
+  <!-- ========================================== -->
+  <div x-show="isAuthorSocialModalOpen" x-cloak 
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+       x-transition:enter="transition ease-out duration-200"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-150"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0">
+
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative"
+         @click.outside="closeAuthorSocialModal()"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div>
+          <h3 class="text-base font-bold text-slate-900 dark:text-white">Kontak & Media Sosial Penulis</h3>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">Tautkan akun publik dan kontak agar pembaca dapat terhubung langsung.</p>
+        </div>
+        <button @click="closeAuthorSocialModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <div class="mt-4 space-y-3.5">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Instagram</label>
+          <input type="text" x-model="socialModalForm.instagram" placeholder="Username (@username) atau URL profil"
+                 class="w-full bg-stone-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">X (Twitter)</label>
+          <input type="text" x-model="socialModalForm.x" placeholder="Username (@username) atau URL profil"
+                 class="w-full bg-stone-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Facebook</label>
+          <input type="text" x-model="socialModalForm.facebook" placeholder="Username atau URL profil Facebook"
+                 class="w-full bg-stone-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">TikTok</label>
+          <input type="text" x-model="socialModalForm.tiktok" placeholder="Username (@username) atau URL profil"
+                 class="w-full bg-stone-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">LinkedIn</label>
+          <input type="text" x-model="socialModalForm.linkedin" placeholder="Username atau URL profil LinkedIn"
+                 class="w-full bg-stone-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nomor WhatsApp</label>
+          <input type="text" x-model="socialModalForm.whatsapp" placeholder="Contoh: 08123456789 atau 628123456789"
+                 class="w-full bg-stone-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Website Pribadi / Portofolio</label>
+          <input type="url" x-model="socialModalForm.website" placeholder="https://portofolio-anda.com"
+                 class="w-full bg-stone-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition" />
+        </div>
+      </div>
+
+      <div class="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
+        <button type="button" @click="closeAuthorSocialModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition">
+          Batal
+        </button>
+        <button type="button" @click="saveAuthorSocialModal()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-indigo-600/30 transition">
+          Terapkan Data
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL BAGIKAN BUKU KE MEDIA SOSIAL / EKSTERNAL -->
+  <!-- ========================================== -->
+  <div x-show="isShareModalOpen" x-cloak 
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+       x-transition:enter="transition ease-out duration-200"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-150"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0">
+
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl relative"
+         @click.outside="closeShareModal()"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div>
+          <h3 class="text-base font-bold text-slate-900 dark:text-white">Bagikan Buku</h3>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">Sebarkan pustaka ini ke media sosial atau kontak eksternal.</p>
+        </div>
+        <button @click="closeShareModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <div class="mt-4 p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/70 dark:border-slate-700/60 flex items-center gap-3">
+        <template x-if="shareBookData?.coverUrl">
+          <img :src="shareBookData.coverUrl" :alt="shareBookData?.title" class="w-12 h-16 object-cover rounded-md shadow-sm border border-slate-200 dark:border-slate-700 flex-shrink-0" />
+        </template>
+        <template x-if="!shareBookData?.coverUrl">
+          <div class="w-12 h-16 rounded-md bg-indigo-600 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">WB</div>
+        </template>
+        <div class="min-w-0 flex-1">
+          <span class="text-[10px] uppercase font-bold tracking-wider text-indigo-600 dark:text-indigo-400" x-text="shareBookData?.category"></span>
+          <h4 class="text-xs font-bold text-slate-900 dark:text-white truncate" x-text="shareBookData?.title"></h4>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate" x-text="`Penulis: ${shareBookData?.author}`"></p>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">Pilih Kanal Berbagi</label>
+        <div class="grid grid-cols-4 gap-2 text-center">
+          <a :href="getShareUrl('whatsapp')" target="_blank" rel="noopener noreferrer" 
+             class="flex flex-col items-center gap-1.5 p-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 transition">
+            <span class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-xs shadow-sm">WA</span>
+            <span class="text-[10px] font-semibold">WhatsApp</span>
+          </a>
+          <a :href="getShareUrl('x')" target="_blank" rel="noopener noreferrer" 
+             class="flex flex-col items-center gap-1.5 p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 transition">
+            <span class="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xs shadow-sm">X</span>
+            <span class="text-[10px] font-semibold">Twitter / X</span>
+          </a>
+          <a :href="getShareUrl('telegram')" target="_blank" rel="noopener noreferrer" 
+             class="flex flex-col items-center gap-1.5 p-2.5 rounded-xl bg-sky-50 hover:bg-sky-100 dark:bg-sky-950/40 dark:hover:bg-sky-900/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 transition">
+            <span class="w-8 h-8 rounded-full bg-sky-500 text-white flex items-center justify-center font-bold text-xs shadow-sm">TG</span>
+            <span class="text-[10px] font-semibold">Telegram</span>
+          </a>
+          <a :href="getShareUrl('facebook')" target="_blank" rel="noopener noreferrer" 
+             class="flex flex-col items-center gap-1.5 p-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 transition">
+            <span class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-sm">FB</span>
+            <span class="text-[10px] font-semibold">Facebook</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Salin Tautan Buku</label>
+        <div class="flex items-center gap-2">
+          <input type="text" readonly :value="getShareBookLink(shareBookData)" 
+                 class="w-full bg-stone-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-700 dark:text-slate-300 focus:outline-none select-all font-mono" />
+          <button type="button" @click="copyShareLink(shareBookData)" 
+                  class="px-3.5 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 flex-shrink-0 shadow-sm"
+                  :class="isLinkCopied ? 'bg-emerald-600 text-white' : 'bg-indigo-600 hover:bg-indigo-700 text-white'">
+            <span x-text="isLinkCopied ? 'Tersalin!' : 'Salin'"></span>
+          </button>
+        </div>
+      </div>
+
+      <template x-if="isNativeShareSupported">
+        <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <button type="button" @click="triggerNativeShare(shareBookData)" 
+                  class="w-full py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+            <span>Buka Menu Berbagi Bawaan HP</span>
+          </button>
+        </div>
+      </template>
+
     </div>
   </div>
 
@@ -1697,6 +1928,14 @@
         ],
         purchasedBookIds: [],
 
+        // State Modal Bagikan Buku
+        isShareModalOpen: false,
+        shareBookData: null,
+        isLinkCopied: false,
+        get isNativeShareSupported() {
+          return typeof navigator !== 'undefined' && Boolean(navigator.share);
+        },
+
         // State Modal Edit Buku
         isEditModalOpen: false,
         isUpdatingBook: false,
@@ -1710,6 +1949,15 @@
           authorPhoto: '',
           authorPhotoFile: null,
           blurb: '',
+          authorLinks: {
+            instagram: '',
+            x: '',
+            facebook: '',
+            tiktok: '',
+            linkedin: '',
+            whatsapp: '',
+            website: ''
+          },
           price: 0,
           external_link: ''
         },
@@ -1722,6 +1970,19 @@
         selectedAuthor: 'Semua Penulis',
         accessOptions: ['Semua', 'Gratis', 'Semi Berbayar', 'Berbayar'],
         sortBy: 'newest',
+
+        // State Modal Media Sosial Penulis
+        isAuthorSocialModalOpen: false,
+        socialModalTarget: 'upload', // 'upload' | 'edit'
+        socialModalForm: {
+          instagram: '',
+          x: '',
+          facebook: '',
+          tiktok: '',
+          linkedin: '',
+          whatsapp: '',
+          website: ''
+        },
 
         // Daftar Kategori Dinamis
         categories: ['Semua', 'Teknologi & AI', 'Edukasi & Parenting', 'Bisnis & SOP', 'Agama & Pemikiran'],
@@ -1806,6 +2067,7 @@
                 author: item.author,
                 authorBio: item.author_bio || null,
                 authorPhoto: item.author_photo || null,
+                authorLinks: item.author_links || null,
                 createdAt: item.created_at ? item.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
                 blurb: item.blurb,
                 accessType: item.access_type || 'Gratis',
@@ -1827,6 +2089,16 @@
               // Tambahkan opsi kategori baru jika ada dari database
               const fetchedCategories = [...new Set(this.catalog.map(b => b.category))];
               this.categories = ['Semua', ...new Set([...this.categories.slice(1), ...fetchedCategories])];
+
+              // Otomatis buka buku jika terdapat parameter ?book=ID pada URL
+              const urlParams = new URLSearchParams(window.location.search);
+              const sharedBookId = urlParams.get('book');
+              if (sharedBookId) {
+                const targetBook = this.catalog.find(b => String(b.id) === String(sharedBookId));
+                if (targetBook) {
+                  this.openBook(targetBook);
+                }
+              }
             }
           } catch (err) {
             console.error('Gagal mengambil data dari Supabase:', err.message);
@@ -1922,6 +2194,15 @@
           authorBio: '',
           authorPhoto: '',
           authorPhotoFile: null,
+          authorLinks: {
+            instagram: '',
+            x: '',
+            facebook: '',
+            tiktok: '',
+            linkedin: '',
+            whatsapp: '',
+            website: ''
+          },
           foreword: '',
           introduction: '',
           glossary: '',
@@ -2223,6 +2504,7 @@
                   author: this.uploadForm.author.trim(),
                   author_bio: this.uploadForm.authorBio?.trim() || null,
                   author_photo: this.uploadForm.authorPhoto?.trim() || null,
+                  author_links: this.uploadForm.authorLinks || null,
                   category: this.uploadForm.category,
                   access_type: this.uploadForm.accessType,
                   price: this.uploadForm.accessType === 'Berbayar' ? Number(this.uploadForm.price) || 0 : 0,
@@ -2281,6 +2563,7 @@
             author: this.uploadForm.author.trim(),
             authorBio: this.uploadForm.authorBio ? this.uploadForm.authorBio.trim() : null,
             authorPhoto: this.uploadForm.authorPhoto ? this.uploadForm.authorPhoto.trim() : null,
+            authorLinks: this.uploadForm.authorLinks || null,
             category: this.uploadForm.category,
             accessType: this.uploadForm.accessType,
             price: this.uploadForm.accessType === 'Berbayar' ? Number(this.uploadForm.price) || 0 : 0,
@@ -2334,6 +2617,7 @@
                 author: newBook.author,
                 author_bio: newBook.authorBio,
                 author_photo: newBook.authorPhoto,
+                author_links: newBook.authorLinks,
                 category: newBook.category,
                 access_type: newBook.accessType,
                 price: newBook.price,
@@ -2353,10 +2637,11 @@
                 .select()
                 .single();
 
-              // Fallback jika kolom author_bio / author_photo belum dibuat di tabel Supabase
-              if (error && (error.message?.includes('author_bio') || error.message?.includes('author_photo'))) {
+              // Fallback jika kolom author_bio / author_photo / author_links belum dibuat di tabel Supabase
+              if (error && (error.message?.includes('author_bio') || error.message?.includes('author_photo') || error.message?.includes('author_links'))) {
                 delete bookPayload.author_bio;
                 delete bookPayload.author_photo;
+                delete bookPayload.author_links;
                 const retry = await this.supabaseClient
                   .from('books')
                   .insert([bookPayload])
@@ -2400,6 +2685,7 @@
           this.uploadForm.author = '';
           this.uploadForm.authorBio = '';
           this.uploadForm.authorPhoto = '';
+          this.uploadForm.authorLinks = { instagram: '', x: '', facebook: '', tiktok: '', linkedin: '', whatsapp: '', website: '' };
           this.uploadForm.authorPhotoFile = null;
           this.uploadForm.foreword = '';
           this.uploadForm.introduction = '';
@@ -2504,12 +2790,129 @@
             author: book.author || '',
             authorBio: book.authorBio || '',
             authorPhoto: book.authorPhoto || '',
+            authorLinks: book.authorLinks ? JSON.parse(JSON.stringify(book.authorLinks)) : { instagram: '', x: '', facebook: '', tiktok: '', linkedin: '', whatsapp: '', website: '' },
             authorPhotoFile: null,
             blurb: book.blurb,
             price: book.price || 0,
             external_link: book.external_link || ''
           };
           this.isEditModalOpen = true;
+        },
+
+        openAuthorSocialModal(target = 'upload') {
+          this.socialModalTarget = target;
+          const sourceLinks = target === 'upload' ? this.uploadForm.authorLinks : this.editForm.authorLinks;
+          this.socialModalForm = {
+            instagram: sourceLinks?.instagram || '',
+            x: sourceLinks?.x || '',
+            facebook: sourceLinks?.facebook || '',
+            tiktok: sourceLinks?.tiktok || '',
+            linkedin: sourceLinks?.linkedin || '',
+            whatsapp: sourceLinks?.whatsapp || '',
+            website: sourceLinks?.website || ''
+          };
+          this.isAuthorSocialModalOpen = true;
+        },
+
+        closeAuthorSocialModal() {
+          this.isAuthorSocialModalOpen = false;
+        },
+
+        shareBook(book) {
+          if (!book) return;
+          this.shareBookData = book;
+          this.isLinkCopied = false;
+          this.isShareModalOpen = true;
+        },
+
+        closeShareModal() {
+          this.isShareModalOpen = false;
+          this.shareBookData = null;
+          this.isLinkCopied = false;
+        },
+
+        getShareBookLink(book) {
+          if (!book) return window.location.href;
+          const url = new URL(window.location.href);
+          url.searchParams.set('book', book.id);
+          return url.toString();
+        },
+
+        getShareUrl(platform) {
+          if (!this.shareBookData) return '#';
+          const book = this.shareBookData;
+          const shareUrl = this.getShareBookLink(book);
+          const text = `Baca "${book.title}" karya ${book.author} di Pustaka WebBook:\n`;
+          
+          switch (platform) {
+            case 'whatsapp':
+              return `https://wa.me/?text=${encodeURIComponent(text + shareUrl)}`;
+            case 'x':
+              return `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
+            case 'telegram':
+              return `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(text)}`;
+            case 'facebook':
+              return `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+            default:
+              return '#';
+          }
+        },
+
+        async copyShareLink(book) {
+          const link = this.getShareBookLink(book);
+          try {
+            await navigator.clipboard.writeText(link);
+          } catch (e) {
+            const temp = document.createElement('input');
+            temp.value = link;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+          }
+          this.isLinkCopied = true;
+          setTimeout(() => { this.isLinkCopied = false; }, 2500);
+        },
+
+        async triggerNativeShare(book) {
+          if (!book) return;
+          const shareUrl = this.getShareBookLink(book);
+          try {
+            await navigator.share({
+              title: book.title,
+              text: `Baca "${book.title}" karya ${book.author} di Pustaka WebBook`,
+              url: shareUrl
+            });
+          } catch (e) {
+            console.log('Share native dibatalkan/tidak didukung:', e);
+          }
+        },
+
+        saveAuthorSocialModal() {
+          const cloned = JSON.parse(JSON.stringify(this.socialModalForm));
+          if (this.socialModalTarget === 'upload') {
+            this.uploadForm.authorLinks = cloned;
+          } else {
+            this.editForm.authorLinks = cloned;
+          }
+          this.closeAuthorSocialModal();
+        },
+
+        hasAuthorLinks(links) {
+          if (!links) return false;
+          return Object.values(links).some(val => val && val.trim());
+        },
+
+        formatSocialUrl(value, prefix) {
+          if (!value) return '#';
+          const val = value.trim();
+          return val.startsWith('http://') || val.startsWith('https://') ? val : prefix + val.replace(/^@/, '');
+        },
+
+        formatWhatsappUrl(wa) {
+          if (!wa) return '#';
+          const clean = wa.replace(/\D/g, '').replace(/^0/, '62');
+          return `https://wa.me/${clean}`;
         },
 
         async editInFullForm() {
@@ -2521,6 +2924,7 @@
             author: b.author || '',
             authorBio: b.authorBio || '',
             authorPhoto: b.authorPhoto || '',
+            authorLinks: b.authorLinks ? JSON.parse(JSON.stringify(b.authorLinks)) : { instagram: '', x: '', facebook: '', tiktok: '', linkedin: '', whatsapp: '', website: '' },
             authorPhotoFile: null,
             foreword: '',
             introduction: '',
@@ -2616,6 +3020,7 @@
               title: this.editForm.title.trim(),
               author: this.editForm.author.trim(),
               author_bio: this.editForm.authorBio ? this.editForm.authorBio.trim() : null,
+              author_links: this.editForm.authorLinks || null,
               author_photo: uploadedPhotoUrl ? uploadedPhotoUrl.trim() : null,
               blurb: this.editForm.blurb.trim(),
               price: Number(this.editForm.price) || 0,
@@ -2628,10 +3033,11 @@
                 .update(payload)
                 .eq('id', this.editForm.id);
 
-              // Fallback jika kolom author_bio / author_photo belum tersedia di tabel Supabase
-              if (error && (error.message?.includes('author_bio') || error.message?.includes('author_photo'))) {
+              // Fallback jika kolom author_bio / author_photo / author_links belum tersedia di tabel Supabase
+              if (error && (error.message?.includes('author_bio') || error.message?.includes('author_photo') || error.message?.includes('author_links'))) {
                 delete payload.author_bio;
                 delete payload.author_photo;
+                delete payload.author_links;
                 const retry = await this.supabaseClient
                   .from('books')
                   .update(payload)
@@ -2657,6 +3063,7 @@
               this.catalog[bookIndex].author = payload.author;
               this.catalog[bookIndex].authorBio = payload.author_bio;
               this.catalog[bookIndex].authorPhoto = payload.author_photo;
+              this.catalog[bookIndex].authorLinks = payload.author_links;
               this.catalog[bookIndex].blurb = payload.blurb;
               this.catalog[bookIndex].price = payload.price;
               this.catalog[bookIndex].external_link = payload.external_link;
@@ -2667,6 +3074,7 @@
               this.activeBook.author = payload.author;
               this.activeBook.authorBio = payload.author_bio;
               this.activeBook.authorPhoto = payload.author_photo;
+              this.activeBook.authorLinks = payload.author_links;
               this.activeBook.blurb = payload.blurb;
               this.activeBook.price = payload.price;
               this.activeBook.external_link = payload.external_link;
