@@ -126,6 +126,26 @@
   <!-- Ambient Luxury Glow Decoration -->
   <div class="fixed top-0 left-1/2 -translate-x-1/2 w-[850px] h-[340px] bg-gradient-to-b from-amber-200/25 via-indigo-200/20 to-transparent blur-3xl pointer-events-none -z-10 dark:opacity-10"></div>
 
+  <!-- Toast Notification System -->
+  <div class="fixed top-5 right-5 z-[100] max-w-sm w-full pointer-events-none" x-cloak>
+    <div x-show="toast.show"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 translate-y-[-12px] scale-95"
+         x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+         x-transition:leave-end="opacity-0 translate-y-[-12px] scale-95"
+         class="pointer-events-auto p-3.5 rounded-xl border shadow-xl flex items-center justify-between gap-3 text-xs font-medium"
+         :class="{
+           'bg-slate-900 text-white border-slate-700': toast.type === 'info',
+           'bg-emerald-600 text-white border-emerald-500': toast.type === 'success',
+           'bg-rose-600 text-white border-rose-500': toast.type === 'error'
+         }">
+      <span class="leading-relaxed" x-text="toast.message"></span>
+      <button type="button" @click="toast.show = false" class="text-white/80 hover:text-white p-1">&times;</button>
+    </div>
+  </div>
+
   <!-- ========================================== -->
   <!-- 1. HEADER & NAVBAR                         -->
   <!-- ========================================== -->
@@ -1050,6 +1070,13 @@
             <span x-text="isSpeaking ? 'Hentikan Audio' : 'Dengarkan Bab Ini'"></span>
           </button>
 
+          <!-- Pengatur Ukuran Font -->
+          <div class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-300 dark:border-slate-700 p-0.5 text-xs">
+            <button type="button" @click="decreaseFontSize()" class="px-2 py-1 hover:bg-white dark:hover:bg-slate-700 rounded transition text-stone-600 dark:text-slate-300 font-bold" title="Perkecil Font">A-</button>
+            <span class="px-1 text-[10px] text-stone-400 font-mono" x-text="`${readerFontSize}px`"></span>
+            <button type="button" @click="increaseFontSize()" class="px-2 py-1 hover:bg-white dark:hover:bg-slate-700 rounded transition text-stone-600 dark:text-slate-300 font-bold" title="Perbesar Font">A+</button>
+          </div>
+
           <select x-model.number="currentChapterIndex" @change="stopTTS(); startReading(currentChapterIndex)" class="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500 flex-1 sm:flex-none max-w-full sm:max-w-[180px] truncate">
             <template x-for="(chap, idx) in activeBook?.chapters" :key="idx">
               <option :value="idx" x-text="`Bab ${idx + 1}: ${chap.title}`"></option>
@@ -1363,7 +1390,10 @@
     <!-- TAMPILAN TEKS BAB / ARTIKEL -->
     <article x-show="readerTab === 'text'" class="bg-[#fefdfc] dark:bg-slate-900 border border-stone-200/80 dark:border-slate-800 rounded-2xl p-6 md:p-10 shadow-[0_10px_35px_rgb(0,0,0,0.04)]">
       <header class="border-b border-stone-200/70 dark:border-slate-800 pb-4 mb-6">
-        <span class="text-xs text-stone-400 dark:text-slate-500 font-medium" x-text="`Bab ${currentChapterIndex + 1} dari ${activeBook?.chapters.length}`"></span>
+        <div class="flex items-center justify-between text-xs text-stone-400 dark:text-slate-500 font-medium mb-1">
+          <span x-text="`Bab ${currentChapterIndex + 1} dari ${activeBook?.chapters?.length || 0}`"></span>
+          <span x-text="getReadingTime(activeBook?.chapters?.[currentChapterIndex]?.content)"></span>
+        </div>
         <h3 class="text-xl md:text-2xl font-bold text-stone-900 dark:text-white mt-1" x-text="activeBook?.chapters[currentChapterIndex]?.title"></h3>
       </header>
 
@@ -1371,7 +1401,8 @@
         <span>Memuat materi bab dari server...</span>
       </div>
       <div x-show="!isLoadingChapters">
-      <div class="book-content max-w-none text-sm md:text-base" 
+      <div class="book-content max-w-none" 
+           :style="`font-size: ${readerFontSize}px;`"
            x-html="getSanitizedContent(activeBook?.chapters[currentChapterIndex]?.content)">
       </div>
       </div>
@@ -2017,6 +2048,17 @@
         currentChapterIndex: 0,
         isSpeaking: false,
         synth: window.speechSynthesis,
+        readerFontSize: 16,
+
+        // Toast Notifikasi
+        toast: { show: false, message: '', type: 'info', timeout: null },
+        showToast(message, type = 'info') {
+          this.toast.message = message;
+          this.toast.type = type;
+          this.toast.show = true;
+          clearTimeout(this.toast.timeout);
+          this.toast.timeout = setTimeout(() => { this.toast.show = false; }, 3500);
+        },
 
         // State Modal Edit Profil Saya
         isProfileModalOpen: false,
@@ -2113,6 +2155,11 @@
           } else {
             this.darkMode = false;
             document.documentElement.classList.remove('dark');
+          }
+
+          const savedSize = localStorage.getItem('readerFontSize');
+          if (savedSize) {
+            this.readerFontSize = parseInt(savedSize, 10) || 16;
           }
 
           const savedPurchases = localStorage.getItem('purchasedBookIds');
@@ -2439,7 +2486,7 @@
           const file = event.target.files[0];
           if (file) {
             if (file.size > 2 * 1024 * 1024) {
-              alert('Ukuran foto profil melebihi 2 MB.');
+              this.showToast('Ukuran foto profil melebihi batas 2 MB.', 'error');
               event.target.value = '';
               return;
             }
@@ -2515,8 +2562,9 @@
             this.uploadForm.authorLinks = JSON.parse(JSON.stringify(updated.authorLinks || {}));
 
             this.closeProfileModal();
+            this.showToast('Profil penulis berhasil diperbarui.', 'success');
           } catch (err) {
-            alert('Gagal menyimpan profil: ' + err.message);
+            this.showToast('Gagal menyimpan profil: ' + err.message, 'error');
           } finally {
             this.isUpdatingProfile = false;
           }
@@ -2630,7 +2678,7 @@
         processSelectedFile(file) {
           const MAX_DOC_SIZE_MB = 15;
           if (file.size > MAX_DOC_SIZE_MB * 1024 * 1024) {
-            alert(`Ukuran berkas melebihi batas maksimal ${MAX_DOC_SIZE_MB} MB.`);
+            this.showToast(`Ukuran berkas melebihi batas maksimal ${MAX_DOC_SIZE_MB} MB.`, 'error');
             this.clearFile();
             return;
           }
@@ -2672,13 +2720,13 @@
           if (file) {
             const MAX_IMG_SIZE_MB = 2;
             if (file.size > MAX_IMG_SIZE_MB * 1024 * 1024) {
-              alert(`Ukuran gambar sampul melebihi ${MAX_IMG_SIZE_MB} MB.`);
+              this.showToast(`Ukuran gambar sampul melebihi ${MAX_IMG_SIZE_MB} MB.`, 'error');
               event.target.value = '';
               return;
             }
 
             if (!file.type.startsWith('image/')) {
-              alert('Silakan pilih berkas gambar yang valid (JPG, PNG, WebP).');
+              this.showToast('Silakan pilih berkas gambar yang valid (JPG, PNG, WebP).', 'error');
               return;
             }
             this.uploadForm.coverFile = file;
@@ -2695,12 +2743,12 @@
           if (file) {
             const MAX_IMG_SIZE_MB = 2;
             if (file.size > MAX_IMG_SIZE_MB * 1024 * 1024) {
-              alert(`Ukuran foto penulis melebihi ${MAX_IMG_SIZE_MB} MB.`);
+              this.showToast(`Ukuran foto penulis melebihi ${MAX_IMG_SIZE_MB} MB.`, 'error');
               event.target.value = '';
               return;
             }
             if (!file.type.startsWith('image/')) {
-              alert('Silakan pilih berkas gambar yang valid (JPG, PNG, WebP).');
+              this.showToast('Silakan pilih berkas gambar yang valid (JPG, PNG, WebP).', 'error');
               return;
             }
             this.uploadForm.authorPhotoFile = file;
@@ -2717,12 +2765,12 @@
           if (file) {
             const MAX_IMG_SIZE_MB = 2;
             if (file.size > MAX_IMG_SIZE_MB * 1024 * 1024) {
-              alert(`Ukuran foto penulis melebihi ${MAX_IMG_SIZE_MB} MB.`);
+              this.showToast(`Ukuran foto penulis melebihi ${MAX_IMG_SIZE_MB} MB.`, 'error');
               event.target.value = '';
               return;
             }
             if (!file.type.startsWith('image/')) {
-              alert('Silakan pilih berkas gambar yang valid (JPG, PNG, WebP).');
+              this.showToast('Silakan pilih berkas gambar yang valid (JPG, PNG, WebP).', 'error');
               return;
             }
             this.editForm.authorPhotoFile = file;
@@ -3145,7 +3193,7 @@
                 .eq('id', book.id);
               if (error) throw error;
             } catch (err) {
-              alert('Gagal menghapus buku: ' + err.message);
+              this.showToast('Gagal menghapus buku: ' + err.message, 'error');
               return;
             }
           }
@@ -3154,6 +3202,7 @@
           if (this.activeBook?.id === book.id) {
             this.closeReader();
           }
+          this.showToast('Buku berhasil dihapus dari rak.', 'info');
         },
 
         openEditModal(book) {
@@ -3479,8 +3528,9 @@
             }
 
             this.closeEditModal();
+            this.showToast('Informasi buku berhasil diperbarui.', 'success');
           } catch (err) {
-            alert('Gagal memperbarui buku: ' + err.message);
+            this.showToast('Gagal memperbarui buku: ' + err.message, 'error');
           } finally {
             this.isUpdatingBook = false;
           }
@@ -3605,7 +3655,7 @@
             document.body.removeChild(link);
             setTimeout(() => URL.revokeObjectURL(blobUrl), 1500);
           } catch (err) {
-            alert('Gagal mengunduh dokumen PDF: ' + err.message);
+            this.showToast('Gagal mengunduh dokumen PDF: ' + err.message, 'error');
           } finally {
             this.isDownloadingPdf = false;
           }
@@ -3685,8 +3735,9 @@
           const methodName = selectedMethodObj ? selectedMethodObj.name : 'Transfer Manual';
           const userEmail = this.currentUser?.email || 'Tamu / Belum Login';
           const formattedPrice = this.formatCurrency(this.checkoutBook?.price);
+          const invoiceId = 'WB-' + Date.now().toString(36).toUpperCase();
 
-          const waText = `Halo Admin Pustaka WebBook,\n\nSaya ingin mengonfirmasi pembelian buku:\n📖 *Judul*: ${this.checkoutBook?.title}\n✍️ *Penulis*: ${this.checkoutBook?.author}\n💰 *Harga*: ${formattedPrice}\n💳 *Metode*: ${methodName}\n👤 *Akun*: ${userEmail}\n\nMohon petunjuk pembayaran dan aktivasi akses buku saya. Terima kasih!`;
+          const waText = `Halo Admin Pustaka WebBook,\n\nSaya ingin mengonfirmasi pesanan buku:\n🧾 *No. Invoice*: ${invoiceId}\n📖 *Judul*: ${this.checkoutBook?.title}\n✍️ *Penulis*: ${this.checkoutBook?.author}\n💰 *Harga*: ${formattedPrice}\n💳 *Metode*: ${methodName}\n👤 *Akun*: ${userEmail}\n\nMohon petunjuk rekening/QRIS pembayaran dan aktivasi akses buku saya. Terima kasih!`;
           const waUrl = `https://wa.me/${this.adminWaNumber}?text=${encodeURIComponent(waText)}`;
           
           if (this.supabaseClient && this.currentUser && this.checkoutBook) {
@@ -3722,6 +3773,28 @@
           return 'Rp ' + Number(amount).toLocaleString('id-ID');
         },
 
+        increaseFontSize() {
+          if (this.readerFontSize < 24) {
+            this.readerFontSize += 2;
+            localStorage.setItem('readerFontSize', this.readerFontSize);
+          }
+        },
+
+        decreaseFontSize() {
+          if (this.readerFontSize > 12) {
+            this.readerFontSize -= 2;
+            localStorage.setItem('readerFontSize', this.readerFontSize);
+          }
+        },
+
+        getReadingTime(content) {
+          if (!content) return '1 mnt baca';
+          const text = content.replace(/<[^>]*>/g, '').trim();
+          const words = text ? text.split(/\s+/).length : 0;
+          const minutes = Math.max(1, Math.ceil(words / 180));
+          return `~${minutes} mnt baca`;
+        },
+
         nextChapter() {
           if (this.activeBook && this.currentChapterIndex < this.activeBook.chapters.length - 1) {
             if (this.activeBook.accessType === 'Berbayar' && !this.purchasedBookIds.includes(this.activeBook.id)) {
@@ -3752,7 +3825,7 @@
 
         startTTS() {
           if (!('speechSynthesis' in window) || !window.speechSynthesis) {
-            alert('Browser Anda belum mendukung fitur Text-to-Speech.');
+            this.showToast('Browser Anda belum mendukung fitur Text-to-Speech.', 'error');
             return;
           }
 
@@ -3769,7 +3842,7 @@
           utterance.rate = 0.95;
 
           if (!textToRead) {
-            alert('Tidak ada materi teks pada bab ini untuk dibacakan.');
+            this.showToast('Tidak ada materi teks pada bab ini untuk dibacakan.', 'info');
             return;
           }
 
