@@ -2013,12 +2013,18 @@
             // Cek Sesi Pengguna Aktif
             this.supabaseClient.auth.getSession().then(({ data: { session } }) => {
               this.currentUser = session?.user || null;
-              if (this.currentUser) this.fetchUserPurchases();
+              if (this.currentUser) {
+                this.fetchUserPurchases();
+                this.loadAuthorProfile();
+              }
             });
 
             this.supabaseClient.auth.onAuthStateChange((_event, session) => {
               this.currentUser = session?.user || null;
-              if (this.currentUser) this.fetchUserPurchases();
+              if (this.currentUser) {
+                this.fetchUserPurchases();
+                this.loadAuthorProfile();
+              }
             });
 
             this.fetchBooks();
@@ -2090,6 +2096,10 @@
               const fetchedCategories = [...new Set(this.catalog.map(b => b.category))];
               this.categories = ['Semua', ...new Set([...this.categories.slice(1), ...fetchedCategories])];
 
+              if (this.currentUser) {
+                this.loadAuthorProfile();
+              }
+
               // Otomatis buka buku jika terdapat parameter ?book=ID pada URL
               const urlParams = new URLSearchParams(window.location.search);
               const sharedBookId = urlParams.get('book');
@@ -2158,6 +2168,7 @@
               if (error) throw error;
               this.currentUser = data.user;
               this.authPassword = '';
+              this.loadAuthorProfile();
             } else {
               const { data, error } = await this.supabaseClient.auth.signUp({
                 email: this.authEmail,
@@ -2167,6 +2178,7 @@
               this.authSuccess = 'Pendaftaran berhasil! Silakan periksa email Anda jika verifikasi aktif, atau langsung masuk.';
               if (data.session) {
                 this.currentUser = data.user;
+                this.loadAuthorProfile();
               }
             }
           } catch (err) {
@@ -2182,6 +2194,95 @@
           }
           this.currentUser = null;
           this.scopeFilter = 'all';
+          this.clearAuthorProfileFromForm();
+        },
+
+        async saveAuthorProfileLocally(profile) {
+          if (!this.currentUser) return;
+          try {
+            localStorage.setItem('author_profile_' + this.currentUser.id, JSON.stringify(profile));
+          } catch (e) {
+            console.warn('Gagal menyimpan profil penulis secara lokal:', e);
+          }
+
+          // Sinkronisasi remote ke tabel Supabase 'profiles'
+          if (this.supabaseClient) {
+            try {
+              const { error } = await this.supabaseClient
+                .from('profiles')
+                .upsert({
+                  id: this.currentUser.id,
+                  author: profile.author || null,
+                  author_bio: profile.authorBio || null,
+                  author_photo: profile.authorPhoto || null,
+                  author_links: profile.authorLinks || {},
+                  updated_at: new Date().toISOString()
+                }, { onConflict: 'id' });
+              if (error) console.warn('Gagal sinkronisasi profil ke Supabase:', error.message);
+            } catch (err) {
+              console.warn('Kesalahan saat upsert profil ke Supabase:', err);
+            }
+          }
+        },
+
+        async loadAuthorProfile() {
+          if (!this.currentUser) return;
+          try {
+            const raw = localStorage.getItem('author_profile_' + this.currentUser.id);
+            let profile = raw ? JSON.parse(raw) : null;
+
+            // Ambil dari tabel remote Supabase 'profiles' jika client tersedia
+            if (this.supabaseClient) {
+              const { data, error } = await this.supabaseClient
+                .from('profiles')
+                .select('author, author_bio, author_photo, author_links')
+                .eq('id', this.currentUser.id)
+                .maybeSingle();
+
+              if (!error && data) {
+                profile = {
+                  author: data.author || '',
+                  authorBio: data.author_bio || '',
+                  authorPhoto: data.author_photo || '',
+                  authorLinks: data.author_links || { instagram: '', x: '', facebook: '', tiktok: '', linkedin: '', whatsapp: '', website: '' }
+                };
+                localStorage.setItem('author_profile_' + this.currentUser.id, JSON.stringify(profile));
+              }
+            }
+
+            // Jika belum ada di localStorage, ambil dari buku terakhir milik penulis ini
+            if (!profile && this.catalog && this.catalog.length > 0) {
+              const myLastBook = this.catalog.find(b => b.userId === this.currentUser.id);
+              if (myLastBook) {
+                profile = {
+                  author: myLastBook.author || '',
+                  authorBio: myLastBook.authorBio || '',
+                  authorPhoto: myLastBook.authorPhoto || '',
+                  authorLinks: myLastBook.authorLinks || { instagram: '', x: '', facebook: '', tiktok: '', linkedin: '', whatsapp: '', website: '' }
+                };
+                this.saveAuthorProfileLocally(profile);
+              }
+            }
+
+            if (profile) {
+              if (profile.author && !this.uploadForm.author) this.uploadForm.author = profile.author;
+              if (profile.authorBio && !this.uploadForm.authorBio) this.uploadForm.authorBio = profile.authorBio;
+              if (profile.authorPhoto && !this.uploadForm.authorPhoto) this.uploadForm.authorPhoto = profile.authorPhoto;
+              if (profile.authorLinks && !this.hasAuthorLinks(this.uploadForm.authorLinks)) {
+                this.uploadForm.authorLinks = JSON.parse(JSON.stringify(profile.authorLinks));
+              }
+            }
+          } catch (e) {
+            console.warn('Gagal memuat profil penulis:', e);
+          }
+        },
+
+        clearAuthorProfileFromForm() {
+          this.uploadForm.author = '';
+          this.uploadForm.authorBio = '';
+          this.uploadForm.authorPhoto = '';
+          this.uploadForm.authorPhotoFile = null;
+          this.uploadForm.authorLinks = { instagram: '', x: '', facebook: '', tiktok: '', linkedin: '', whatsapp: '', website: '' };
         },
 
         // Form Upload State
@@ -2556,6 +2657,14 @@
             return;
           }
 
+          // Simpan identitas penulis agar tidak perlu mengetik ulang saat unggah berikutnya
+          this.saveAuthorProfileLocally({
+            author: this.uploadForm.author.trim(),
+            authorBio: this.uploadForm.authorBio ? this.uploadForm.authorBio.trim() : '',
+            authorPhoto: this.uploadForm.authorPhoto ? this.uploadForm.authorPhoto.trim() : '',
+            authorLinks: this.uploadForm.authorLinks || {}
+          });
+
           const newBook = {
             id: 'book-' + Date.now(),
             userId: this.currentUser?.id || null,
@@ -2682,11 +2791,8 @@
           this.catalog.unshift(newBook);
           this.clearFile();
           this.uploadForm.title = '';
-          this.uploadForm.author = '';
-          this.uploadForm.authorBio = '';
-          this.uploadForm.authorPhoto = '';
-          this.uploadForm.authorLinks = { instagram: '', x: '', facebook: '', tiktok: '', linkedin: '', whatsapp: '', website: '' };
           this.uploadForm.authorPhotoFile = null;
+          this.loadAuthorProfile();
           this.uploadForm.foreword = '';
           this.uploadForm.introduction = '';
           this.uploadForm.glossary = '';
@@ -2892,6 +2998,14 @@
           const cloned = JSON.parse(JSON.stringify(this.socialModalForm));
           if (this.socialModalTarget === 'upload') {
             this.uploadForm.authorLinks = cloned;
+            if (this.currentUser) {
+              this.saveAuthorProfileLocally({
+                author: this.uploadForm.author ? this.uploadForm.author.trim() : '',
+                authorBio: this.uploadForm.authorBio ? this.uploadForm.authorBio.trim() : '',
+                authorPhoto: this.uploadForm.authorPhoto ? this.uploadForm.authorPhoto.trim() : '',
+                authorLinks: cloned
+              });
+            }
           } else {
             this.editForm.authorLinks = cloned;
           }
@@ -2976,10 +3090,8 @@
           this.isEditingId = null;
           this.clearFile();
           this.uploadForm.title = '';
-          this.uploadForm.author = '';
-          this.uploadForm.authorBio = '';
-          this.uploadForm.authorPhoto = '';
           this.uploadForm.authorPhotoFile = null;
+          this.loadAuthorProfile();
           this.uploadForm.foreword = '';
           this.uploadForm.introduction = '';
           this.uploadForm.glossary = '';
@@ -3055,6 +3167,15 @@
                 error = retry.error;
               }
               if (error) throw error;
+            }
+
+            if (this.currentUser) {
+              this.saveAuthorProfileLocally({
+                author: payload.author,
+                authorBio: payload.author_bio || '',
+                authorPhoto: payload.author_photo || '',
+                authorLinks: payload.author_links || {}
+              });
             }
 
             const bookIndex = this.catalog.findIndex(b => b.id === this.editForm.id);
