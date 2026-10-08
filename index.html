@@ -1192,7 +1192,7 @@
       <div class="px-4 py-3 bg-slate-50 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
         <div class="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium truncate">
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse flex-shrink-0"></span>
-          <span class="truncate" x-text="activeBook?.external_link"></span>
+          <span class="truncate" x-text="safeUrl(activeBook?.external_link) || 'Link Eksternal'"></span>
         </div>
         <div class="flex items-center gap-2 flex-shrink-0">
           <button type="button" @click="isEmbedFullscreen = !isEmbedFullscreen" 
@@ -1200,7 +1200,7 @@
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
             <span x-text="isEmbedFullscreen ? 'Kecilkan' : 'Layar Penuh'"></span>
           </button>
-          <a :href="activeBook?.external_link" target="_blank" rel="noopener noreferrer" class="text-indigo-600 dark:text-indigo-400 hover:underline text-xs flex items-center gap-1 font-semibold">
+          <a :href="safeUrl(activeBook?.external_link) || '#'" target="_blank" rel="noopener noreferrer" class="text-indigo-600 dark:text-indigo-400 hover:underline text-xs flex items-center gap-1 font-semibold">
             <span>Buka Tab Baru</span>
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
           </a>
@@ -1212,7 +1212,7 @@
           <button type="button" @click="isEmbedFullscreen = false" class="px-3 py-1 bg-white/20 hover:bg-white/30 text-white rounded text-xs font-medium">Tutup Layar Penuh (&times;)</button>
         </div>
         <iframe 
-          :src="activeBook?.external_link" 
+          :src="safeUrl(activeBook?.external_link)" 
           class="w-full h-full flex-1 rounded-b-xl border-0" 
           sandbox="allow-scripts allow-same-origin allow-forms"
           title="WebBook Viewer"
@@ -2166,7 +2166,7 @@
               try {
                 const { data: chData } = await this.supabaseClient
                   .from('chapters')
-                  .select('id, book_id, title, content, chapter_order, is_preview')
+                  .select('id, book_id, title, chapter_order, is_preview')
                   .order('chapter_order', { ascending: true });
 
                 if (chData) {
@@ -2205,7 +2205,7 @@
                   ? bookChapters.sort((a, b) => (a.chapter_order || 0) - (b.chapter_order || 0))
                   : [{
                       title: 'Bab 1: Pengantar ' + item.title,
-                      content: `<p>${item.blurb || 'Tidak ada konten.'}</p>`
+                      content: ''
                     }]
                 };
               });
@@ -2314,11 +2314,16 @@
         },
 
         async handleLogout() {
+          this.stopTTS();
           if (this.supabaseClient) {
             await this.supabaseClient.auth.signOut();
           }
           this.currentUser = null;
           this.scopeFilter = 'all';
+          this.purchasedBookIds = [];
+          this.activeBook = null;
+          this.activeBookSignedUrl = '';
+          localStorage.removeItem('purchasedBookIds');
           this.clearAuthorProfileFromForm();
           await this.fetchBooks();
         },
@@ -3074,6 +3079,12 @@
           }
         },
 
+        safeUrl(url) {
+          if (!url || typeof url !== 'string') return '';
+          const trimmed = url.trim();
+          return /^https?:\/\//i.test(trimmed) ? trimmed : '';
+        },
+
         getAuthorInitials(name) {
           if (!name) return 'WB';
           return name
@@ -3086,7 +3097,16 @@
 
         getSanitizedContent(rawHtml) {
           if (!rawHtml) return '<p class="text-slate-400 italic">Tidak ada isi konten pada bab ini.</p>';
-          return typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(rawHtml, { ADD_ATTR: ['target'] }) : rawHtml;
+          if (typeof DOMPurify !== 'undefined') {
+            return DOMPurify.sanitize(rawHtml, {
+              ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'blockquote', 'code', 'pre', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'img', 'br', 'hr', 'span', 'div'],
+              ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'target', 'rel'],
+              ADD_ATTR: ['target'],
+              FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form'],
+              FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover']
+            });
+          }
+          return rawHtml;
         },
 
         getEmbedUrl(url) {
@@ -3269,6 +3289,7 @@
         formatSocialUrl(value, prefix) {
           if (!value) return '#';
           const val = value.trim();
+          if (/^javascript:/i.test(val) || /^data:/i.test(val)) return '#';
           return val.startsWith('http://') || val.startsWith('https://') ? val : prefix + val.replace(/^@/, '');
         },
 
@@ -3582,7 +3603,7 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            URL.revokeObjectURL(blobUrl);
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 1500);
           } catch (err) {
             alert('Gagal mengunduh dokumen PDF: ' + err.message);
           } finally {
@@ -3591,6 +3612,7 @@
         },
 
         async openBook(book) {
+          this.stopTTS();
           this.activeBook = { ...book, chapters: book.chapters ? [...book.chapters] : [] };
           this.activeBookSignedUrl = '';
           this.currentChapterIndex = 0;
@@ -3604,6 +3626,10 @@
           if (this.supabaseClient && (isNumericId || isUuid)) {
             this.isLoadingChapters = true;
             try {
+              const isOwner = this.currentUser && book.userId === this.currentUser.id;
+              const hasPurchased = this.purchasedBookIds.includes(String(book.id));
+              const canAccessFull = book.accessType !== 'Berbayar' || isOwner || hasPurchased;
+
               const { data, error } = await this.supabaseClient
                 .from('chapters')
                 .select('id, title, content, chapter_order, is_preview')
@@ -3611,7 +3637,13 @@
                 .order('chapter_order', { ascending: true });
 
               if (!error && data && data.length > 0) {
-                this.activeBook.chapters = data;
+                this.activeBook.chapters = data.map((ch, idx) => {
+                  const isAllowed = canAccessFull || ch.is_preview || idx === 0;
+                  return {
+                    ...ch,
+                    content: isAllowed ? (ch.content || '') : '<p class="text-amber-600 dark:text-amber-400 font-semibold p-4 border border-amber-300 dark:border-amber-700 rounded-xl bg-amber-50 dark:bg-amber-950/30 text-center">🔒 Bab ini terkunci. Silakan buka akses penuh buku untuk membaca isi materi.</p>'
+                  };
+                });
               }
             } catch (err) {
               console.error('Gagal memuat bab:', err);
@@ -3727,14 +3759,10 @@
           this.stopTTS();
 
           const currentChapter = this.activeBook?.chapters?.[this.currentChapterIndex];
-          const rawHtml = currentChapter ? (typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(currentChapter.content) : currentChapter.content) : '';
+          const rawHtml = currentChapter ? this.getSanitizedContent(currentChapter.content) : '';
           const tempDiv = document.createElement('div');
           tempDiv.innerHTML = rawHtml;
           const textToRead = (tempDiv.innerText || tempDiv.textContent || '').trim();
-
-          const tempDiv = document.createElement('div');
-          tempDiv.innerHTML = rawHtml;
-          const textToRead = tempDiv.innerText || tempDiv.textContent;
 
           const utterance = new SpeechSynthesisUtterance(textToRead);
           utterance.lang = 'id-ID';
