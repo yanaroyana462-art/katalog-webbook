@@ -1050,7 +1050,7 @@
             <span x-text="isSpeaking ? 'Hentikan Audio' : 'Dengarkan Bab Ini'"></span>
           </button>
 
-          <select x-model="currentChapterIndex" @change="stopTTS()" class="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500 flex-1 sm:flex-none max-w-full sm:max-w-[180px] truncate">
+          <select x-model.number="currentChapterIndex" @change="stopTTS(); startReading(currentChapterIndex)" class="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500 flex-1 sm:flex-none max-w-full sm:max-w-[180px] truncate">
             <template x-for="(chap, idx) in activeBook?.chapters" :key="idx">
               <option :value="idx" x-text="`Bab ${idx + 1}: ${chap.title}`"></option>
             </template>
@@ -2263,6 +2263,11 @@
           return this.categories.filter(c => c !== 'Semua');
         },
 
+        get floatingBooks() {
+          const q = this.floatingBookSearch ? this.floatingBookSearch.toLowerCase().trim() : '';
+          return this.catalog.filter(b => !q || b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q));
+        },
+
         get authorList() {
           return [...new Set(this.catalog.map(b => b.author))].sort();
         },
@@ -2286,6 +2291,7 @@
               this.currentUser = data.user;
               this.authPassword = '';
               this.loadAuthorProfile();
+              await this.fetchBooks();
             } else {
               const { data, error } = await this.supabaseClient.auth.signUp({
                 email: this.authEmail,
@@ -2295,6 +2301,7 @@
               this.authSuccess = 'Pendaftaran berhasil! Silakan periksa email Anda jika verifikasi aktif, atau langsung masuk.';
               if (data.session) {
                 this.currentUser = data.user;
+                await this.fetchBooks();
                 this.loadAuthorProfile();
               }
             }
@@ -2312,6 +2319,7 @@
           this.currentUser = null;
           this.scopeFilter = 'all';
           this.clearAuthorProfileFromForm();
+          await this.fetchBooks();
         },
 
         async saveAuthorProfileLocally(profile) {
@@ -2494,6 +2502,12 @@
               Object.assign(this.activeBook, updated);
             }
             await this.loadAuthorProfile();
+
+            this.uploadForm.author = updated.author;
+            this.uploadForm.authorBio = updated.authorBio;
+            this.uploadForm.authorPhoto = updated.authorPhoto;
+            this.uploadForm.authorLinks = JSON.parse(JSON.stringify(updated.authorLinks || {}));
+
             this.closeProfileModal();
           } catch (err) {
             alert('Gagal menyimpan profil: ' + err.message);
@@ -2560,6 +2574,9 @@
         // Getter Computed untuk memfilter dan mengurutkan buku secara otomatis
         get filteredBooks() {
           return this.catalog.filter(book => {
+            // Proteksi Buku Private: Hanya pemilik buku yang dapat melihatnya
+            if (book.isPrivate && (!this.currentUser || book.userId !== this.currentUser.id)) return false;
+
             // Filter Lingkup Koleksi (Semua Koleksi vs Buku Saya)
             if (this.scopeFilter === 'my-books') {
               if (!this.currentUser || book.userId !== this.currentUser.id) return false;
@@ -2817,6 +2834,8 @@
                   if (uploadedDocUrl) this.uploadForm.fileUrl = uploadedDocUrl;
                 }
 
+                const calculatedAccess = Number(this.uploadForm.price) > 0 ? 'Berbayar' : this.uploadForm.accessType;
+
                 const updatePayload = {
                   title: this.uploadForm.title.trim(),
                   author: this.uploadForm.author.trim(),
@@ -2824,8 +2843,8 @@
                   author_photo: this.uploadForm.authorPhoto?.trim() || null,
                   author_links: this.uploadForm.authorLinks || null,
                   category: this.uploadForm.category,
-                  access_type: this.uploadForm.accessType,
-                  price: this.uploadForm.accessType === 'Berbayar' ? Number(this.uploadForm.price) || 0 : 0,
+                  access_type: calculatedAccess,
+                  price: calculatedAccess === 'Berbayar' ? Number(this.uploadForm.price) || 0 : 0,
                   is_private: this.uploadForm.isPrivate === 'true',
                   cover_url: this.uploadForm.coverUrl || '',
                   blurb: this.uploadForm.blurb.trim(),
@@ -2834,7 +2853,14 @@
                   file_name: this.uploadForm.fileName || null
                 };
 
-                await this.supabaseClient.from('books').update(updatePayload).eq('id', targetId);
+                const { data: updatedData, error: updateErr } = await this.supabaseClient
+                  .from('books')
+                  .update(updatePayload)
+                  .eq('id', targetId)
+                  .select('id');
+
+                if (updateErr) throw updateErr;
+                if (!updatedData || updatedData.length === 0) throw new Error('Pembaruan buku ditolak oleh izin database (RLS) atau buku tidak ditemukan.');
 
                 // Sinkronkan bab terbaru ke tabel chapters di Supabase
                 await this.supabaseClient.from('chapters').delete().eq('book_id', targetId);
@@ -2881,6 +2907,7 @@
             authorPhoto: this.uploadForm.authorPhoto ? this.uploadForm.authorPhoto.trim() : '',
             authorLinks: this.uploadForm.authorLinks || {}
           });
+          const calculatedAccess = Number(this.uploadForm.price) > 0 ? 'Berbayar' : this.uploadForm.accessType;
 
           const newBook = {
             id: 'book-' + Date.now(),
@@ -2891,8 +2918,8 @@
             authorPhoto: this.uploadForm.authorPhoto ? this.uploadForm.authorPhoto.trim() : null,
             authorLinks: this.uploadForm.authorLinks || null,
             category: this.uploadForm.category,
-            accessType: this.uploadForm.accessType,
-            price: this.uploadForm.accessType === 'Berbayar' ? Number(this.uploadForm.price) || 0 : 0,
+            accessType: calculatedAccess,
+            price: calculatedAccess === 'Berbayar' ? Number(this.uploadForm.price) || 0 : 0,
             createdAt: new Date().toISOString().split('T')[0],
             blurb: this.uploadForm.blurb.trim(),
             isPrivate: this.uploadForm.isPrivate === 'true',
@@ -2960,7 +2987,7 @@
               let { data, error } = await this.supabaseClient
                 .from('books')
                 .insert([bookPayload])
-                .select()
+                .select('id')
                 .single();
 
               // Fallback jika kolom author_bio / author_photo / author_links belum dibuat di tabel Supabase
@@ -2971,13 +2998,14 @@
                 const retry = await this.supabaseClient
                   .from('books')
                   .insert([bookPayload])
-                  .select()
+                  .select('id')
                   .single();
                 data = retry.data;
                 error = retry.error;
               }
 
               if (error) throw error;
+              if (!data) throw new Error('Gagal menambahkan buku baru (RLS Supabase membatasi penambahan data).');
               if (data) {
                 newBook.id = String(data.id);
 
@@ -3008,6 +3036,9 @@
           this.catalog.unshift(newBook);
           this.clearFile();
           this.uploadForm.title = '';
+          this.uploadForm.category = 'Teknologi & AI';
+          this.uploadForm.isPrivate = 'false';
+          this.uploadForm.fileName = '';
           this.uploadForm.authorPhotoFile = null;
           this.loadAuthorProfile();
           this.uploadForm.foreword = '';
@@ -3345,6 +3376,7 @@
               }
             }
 
+            const calculatedAccess = Number(this.editForm.price) > 0 ? 'Berbayar' : 'Gratis';
             const payload = {
               title: this.editForm.title.trim(),
               author: this.editForm.author.trim(),
@@ -3352,6 +3384,7 @@
               author_links: this.editForm.authorLinks || null,
               author_photo: uploadedPhotoUrl ? uploadedPhotoUrl.trim() : null,
               blurb: this.editForm.blurb.trim(),
+              access_type: calculatedAccess,
               price: Number(this.editForm.price) || 0,
               external_link: this.editForm.external_link ? this.editForm.external_link.trim() : null
             };
@@ -3360,7 +3393,8 @@
               let { error } = await this.supabaseClient
                 .from('books')
                 .update(payload)
-                .eq('id', this.editForm.id);
+                .eq('id', this.editForm.id)
+                .select('id');
 
               // Fallback jika kolom author_bio / author_photo / author_links belum tersedia di tabel Supabase
               if (error && (error.message?.includes('author_bio') || error.message?.includes('author_photo') || error.message?.includes('author_links'))) {
@@ -3370,7 +3404,8 @@
                 const retry = await this.supabaseClient
                   .from('books')
                   .update(payload)
-                  .eq('id', this.editForm.id);
+                  .eq('id', this.editForm.id)
+                  .select('id');
                 error = retry.error;
               }
 
@@ -3380,10 +3415,12 @@
                 const retry = await this.supabaseClient
                   .from('books')
                   .update(payload)
-                  .eq('id', this.editForm.id);
+                  .eq('id', this.editForm.id)
+                  .select('id');
                 error = retry.error;
               }
               if (error) throw error;
+              if (!retry && !error) { /* update sukses */ }
             }
 
             if (this.currentUser) {
@@ -3404,6 +3441,7 @@
               this.catalog[bookIndex].authorLinks = payload.author_links;
               this.catalog[bookIndex].blurb = payload.blurb;
               this.catalog[bookIndex].price = payload.price;
+              this.catalog[bookIndex].accessType = payload.access_type;
               this.catalog[bookIndex].external_link = payload.external_link;
             }
 
@@ -3414,6 +3452,7 @@
               this.activeBook.authorPhoto = payload.author_photo;
               this.activeBook.authorLinks = payload.author_links;
               this.activeBook.blurb = payload.blurb;
+              this.activeBook.accessType = payload.access_type;
               this.activeBook.price = payload.price;
               this.activeBook.external_link = payload.external_link;
             }
@@ -3436,6 +3475,7 @@
         },
 
         goToCatalog() {
+          if (this.isEditingId) this.cancelEditMode();
           this.closeReader();
           this.currentView = 'catalog';
         },
@@ -3505,14 +3545,49 @@
             this.openPaymentModal(book);
             return;
           }
-          const downloadUrl = await this.getSignedFileUrl(book, 120);
-          const link = document.createElement('a');
-          link.href = downloadUrl;
-          link.download = book.fileName || `${book.title}.pdf`;
-          link.target = '_blank';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
+          this.isDownloadingPdf = true;
+          try {
+            const downloadUrl = await this.getSignedFileUrl(book, 120);
+            const response = await fetch(downloadUrl);
+            if (!response.ok) throw new Error('Gagal mengunduh berkas PDF.');
+            const existingPdfBytes = await response.arrayBuffer();
+
+            let pdfBytesToDownload = existingPdfBytes;
+            if (window.PDFLib) {
+              const { PDFDocument, rgb, degrees } = window.PDFLib;
+              const pdfDoc = await PDFDocument.load(existingPdfBytes, { ignoreEncryption: true });
+              const pages = pdfDoc.getPages();
+              const userText = this.currentUser?.email || 'Pembaca Terverifikasi';
+              const watermarkText = `Dilisensikan untuk ${userText}`;
+
+              for (const page of pages) {
+                const { width, height } = page.getSize();
+                page.drawText(watermarkText, {
+                  x: width / 2 - 140,
+                  y: height / 2,
+                  size: 15,
+                  color: rgb(0.3, 0.3, 0.3),
+                  opacity: 0.25,
+                  rotate: degrees(45)
+                });
+              }
+              pdfBytesToDownload = await pdfDoc.save();
+            }
+
+            const blob = new Blob([pdfBytesToDownload], { type: 'application/pdf' });
+            const blobUrl = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = book.fileName || `${book.title}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(blobUrl);
+          } catch (err) {
+            alert('Gagal mengunduh dokumen PDF: ' + err.message);
+          } finally {
+            this.isDownloadingPdf = false;
+          }
         },
 
         async openBook(book) {
