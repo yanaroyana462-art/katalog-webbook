@@ -1505,6 +1505,16 @@ function portalEngine() {
        this.openPaymentModal(this.activeBook);
        return;
      }
+     this.stopTTS();
+
+     // Jika buku memiliki file dokumen (PDF), samakan fungsi membuka ke Embedded Viewer
+     if (this.activeBook?.fileUrl) {
+       this.readerTab = 'document';
+       this.loadSignedUrlForActiveBook();
+       window.scrollTo({ top: 0, behavior: 'smooth' });
+       return;
+     }
+
      this.currentChapterIndex = chapterIndex;
      this.readerTab = 'text';
      window.scrollTo({ top: 0, behavior: 'smooth' });
