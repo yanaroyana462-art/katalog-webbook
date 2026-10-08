@@ -949,7 +949,7 @@
             <span>Teks Bab</span>
           </button>
           <template x-if="activeBook?.fileUrl">
-            <button type="button" @click="readerTab = 'document'; stopTTS();"
+            <button type="button" @click="readerTab = 'document'; stopTTS(); loadSignedUrlForActiveBook();"
                     class="px-2.5 py-1 rounded-md text-xs font-semibold transition flex items-center gap-1"
                     :class="readerTab === 'document' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -1048,7 +1048,7 @@
               </button>
             </template>
             <template x-if="activeBook?.fileUrl">
-              <button @click="readerTab = 'document'; stopTTS();" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs md:text-sm font-semibold shadow-md shadow-emerald-600/30 transition flex items-center justify-center gap-2 text-center">
+              <button @click="readerTab = 'document'; stopTTS(); loadSignedUrlForActiveBook();" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs md:text-sm font-semibold shadow-md shadow-emerald-600/30 transition flex items-center justify-center gap-2 text-center">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 <span>Baca Dokumen (PDF)</span>
               </button>
@@ -1129,10 +1129,18 @@
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
             <span x-text="isEmbedFullscreen ? 'Kecilkan' : 'Layar Penuh'"></span>
           </button>
-          <a :href="activeBook?.fileUrl" download class="text-indigo-600 dark:text-indigo-400 hover:underline text-xs flex items-center gap-1">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-            <span>Unduh</span>
-          </a>
+          <template x-if="canDownloadBook(activeBook)">
+            <button type="button" @click="downloadPDF(activeBook)" class="text-indigo-600 dark:text-indigo-400 hover:underline text-xs flex items-center gap-1 font-semibold">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+              <span>Unduh PDF</span>
+            </button>
+          </template>
+          <template x-if="!canDownloadBook(activeBook)">
+            <button type="button" @click="openPaymentModal(activeBook)" class="text-amber-600 dark:text-amber-400 hover:underline text-xs flex items-center gap-1 font-semibold" title="Beli akses untuk mengunduh dokumen lengkap">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+              <span>Unduh Terkunci (Beli)</span>
+            </button>
+          </template>
         </div>
       </div>
       <div :class="isEmbedFullscreen ? 'fixed inset-0 z-50 bg-slate-950 p-4 flex flex-col' : 'relative w-full h-[450px] sm:h-[650px] md:h-[720px] bg-slate-100 dark:bg-slate-950'">
@@ -1140,7 +1148,24 @@
           <span class="text-xs font-semibold truncate" x-text="activeBook?.title"></span>
           <button type="button" @click="isEmbedFullscreen = false" class="px-3 py-1 bg-white/20 hover:bg-white/30 text-white rounded text-xs font-medium">Tutup Layar Penuh (&times;)</button>
         </div>
-        <iframe :src="getEmbedUrl(activeBook?.fileUrl)" class="w-full h-full flex-1 rounded-b-xl border-0" allow="fullscreen"></iframe>
+        <template x-if="canDownloadBook(activeBook)">
+          <div class="w-full h-full flex flex-col relative">
+            <div x-show="isLoadingDocument" class="absolute inset-0 flex items-center justify-center bg-slate-100 dark:bg-slate-900 z-10 text-xs text-slate-500">
+              <span class="animate-pulse">Menyiapkan akses dokumen privat...</span>
+            </div>
+            <iframe :src="getEmbedUrl(activeBookSignedUrl || activeBook?.fileUrl)" class="w-full h-full flex-1 rounded-b-xl border-0" allow="fullscreen"></iframe>
+          </div>
+        </template>
+        <template x-if="!canDownloadBook(activeBook)">
+          <div class="w-full h-full flex flex-col items-center justify-center p-6 text-center">
+            <div class="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-4 shadow-sm">
+              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            </div>
+            <h4 class="text-base font-bold text-slate-900 dark:text-white mb-1">Dokumen PDF Terkunci</h4>
+            <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mb-4">Berkas PDF ini dilindungi akses privat. Beli buku ini untuk membaca dan mengunduh dokumen secara utuh.</p>
+            <button @click="openPaymentModal(activeBook)" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-emerald-600/30 transition flex items-center gap-2"><span>Buka Akses Buku (<span x-text="formatCurrency(activeBook?.price)"></span>)</span></button>
+          </div>
+        </template>
       </div>
     </div>
 
@@ -1511,6 +1536,8 @@
         activeBook: null,
         readerTab: 'overview', // 'overview' | 'text' | 'document' | 'external'
         isEmbedFullscreen: false,
+        activeBookSignedUrl: '',
+        isLoadingDocument: false,
         currentChapterIndex: 0,
         isSpeaking: false,
         synth: window.speechSynthesis,
@@ -2253,11 +2280,16 @@
         },
 
         extractStoragePath(publicUrl, bucketName) {
-          if (!publicUrl || !publicUrl.includes(bucketName)) return null;
+          if (!publicUrl) return null;
           try {
-            const marker = `/${bucketName}/`;
-            const index = publicUrl.indexOf(marker);
-            return index !== -1 ? decodeURIComponent(publicUrl.substring(index + marker.length)) : null;
+            let path = publicUrl;
+            if (path.includes(`/${bucketName}/`)) {
+              const marker = `/${bucketName}/`;
+              const index = path.indexOf(marker);
+              path = path.substring(index + marker.length);
+            }
+            path = path.split('?')[0];
+            return decodeURIComponent(path);
           } catch (e) {
             return null;
           }
@@ -2544,8 +2576,64 @@
           this.startReading(chapterIndex);
         },
 
+        canDownloadBook(book = this.activeBook) {
+          if (!book || !book.fileUrl) return false;
+          if (book.accessType === 'Gratis') return true;
+          if (this.currentUser && book.userId === this.currentUser.id) return true;
+          return this.purchasedBookIds.includes(book.id);
+        },
+
+        async getSignedFileUrl(book, expiresIn = 3600) {
+          if (!this.supabaseClient || !book?.fileUrl) return book?.fileUrl || '';
+          let path = this.extractStoragePath(book.fileUrl, SUPABASE_STORAGE_BUCKET);
+          if (!path && !book.fileUrl.startsWith('http')) {
+            path = book.fileUrl;
+          }
+          if (!path) return book.fileUrl;
+
+          const { data, error } = await this.supabaseClient.storage
+            .from(SUPABASE_STORAGE_BUCKET)
+            .createSignedUrl(path, expiresIn);
+
+          if (error) {
+            console.error('Gagal membuat Signed URL:', error.message);
+            return book.fileUrl;
+          }
+          return data?.signedUrl || book.fileUrl;
+        },
+
+        async loadSignedUrlForActiveBook() {
+          if (!this.activeBook || !this.activeBook.fileUrl) return;
+          if (!this.canDownloadBook(this.activeBook)) {
+            this.activeBookSignedUrl = '';
+            return;
+          }
+          this.isLoadingDocument = true;
+          try {
+            this.activeBookSignedUrl = await this.getSignedFileUrl(this.activeBook, 3600);
+          } finally {
+            this.isLoadingDocument = false;
+          }
+        },
+
+        async downloadPDF(book = this.activeBook) {
+          if (!this.canDownloadBook(book)) {
+            this.openPaymentModal(book);
+            return;
+          }
+          const downloadUrl = await this.getSignedFileUrl(book, 120);
+          const link = document.createElement('a');
+          link.href = downloadUrl;
+          link.download = book.fileName || `${book.title}.pdf`;
+          link.target = '_blank';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        },
+
         async openBook(book) {
           this.activeBook = { ...book, chapters: book.chapters ? [...book.chapters] : [] };
+          this.activeBookSignedUrl = '';
           this.currentChapterIndex = 0;
           this.isEmbedFullscreen = false;
           this.readerTab = book.external_link ? 'external' : 'overview';
@@ -2571,6 +2659,9 @@
             } finally {
               this.isLoadingChapters = false;
             }
+          }
+          if (this.canDownloadBook(this.activeBook)) {
+            this.loadSignedUrlForActiveBook();
           }
           window.scrollTo({ top: 0, behavior: 'smooth' });
         },
