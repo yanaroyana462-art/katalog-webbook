@@ -1,0 +1,96 @@
+[x-cloak] { display: none !important; }
+::-webkit-scrollbar { width: 7px; }
+::-webkit-scrollbar-track { background: #f7f5f0; }
+::-webkit-scrollbar-thumb { background: #d7d0c5; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #beaf9d; }
+.dark ::-webkit-scrollbar-track { background: #0f172a; }
+.dark ::-webkit-scrollbar-thumb { background: #334155; }
+
+/* Styling Konten Pembaca (.book-content) untuk Mode Terang & Gelap */
+.book-content {
+  color: #334155;
+  line-height: 1.8;
+}
+.dark .book-content {
+  color: #cbd5e1;
+}
+.book-content h1, .book-content h2, .book-content h3, .book-content h4, .book-content h5, .book-content h6 {
+  color: #0f172a;
+  font-weight: 700;
+  margin-top: 1.5em;
+  margin-bottom: 0.6em;
+}
+.dark .book-content h1, .dark .book-content h2, .dark .book-content h3, .dark .book-content h4, .dark .book-content h5, .dark .book-content h6 {
+  color: #f8fafc;
+}
+.book-content p {
+  margin-bottom: 1.1em;
+}
+.book-content blockquote, .book-content .info-box {
+  border-left: 4px solid #4f46e5;
+  background-color: #f8fafc;
+  color: #1e293b;
+  padding: 0.85rem 1.15rem;
+  border-radius: 0.5rem;
+  margin: 1.25em 0;
+}
+.dark .book-content blockquote, .dark .book-content .info-box {
+  border-left-color: #818cf8;
+  background-color: #1e293b;
+  color: #e2e8f0;
+}
+.book-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+}
+.book-content pre {
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background-color: #f1f5f9;
+}
+.dark .book-content pre {
+  background-color: #1e293b;
+}
+.book-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5em 0;
+  font-size: 0.875rem;
+  display: block;
+  overflow-x: auto;
+}
+.book-content th, .book-content td {
+  border: 1px solid #e2e8f0;
+  padding: 0.65rem 0.85rem;
+  text-align: left;
+}
+.dark .book-content th, .dark .book-content td {
+  border-color: #334155;
+}
+.book-content th {
+  background-color: #f1f5f9;
+  color: #0f172a;
+  font-weight: 600;
+}
+.dark .book-content th {
+  background-color: #0f172a;
+  color: #f8fafc;
+}
+.book-content code {
+  background-color: #f1f5f9;
+  color: #db2777;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+}
+.dark .book-content code {
+  background-color: #1e293b;
+  color: #f472b6;
+}
+
+/* Sembunyikan scrollbar pada filter horizontal di HP agar terlihat rapi */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
