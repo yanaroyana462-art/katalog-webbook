@@ -1508,9 +1508,18 @@ function portalEngine() {
      this.stopTTS();
 
      // Jika buku memiliki file dokumen (PDF), samakan fungsi membuka ke Embedded Viewer
-     if (this.activeBook?.fileUrl) {
+     const docUrl = this.activeBook?.fileUrl || this.activeBook?.file_url;
+     if (docUrl) {
+       if (!this.activeBook.fileUrl) this.activeBook.fileUrl = docUrl;
        this.readerTab = 'document';
        this.loadSignedUrlForActiveBook();
+       window.scrollTo({ top: 0, behavior: 'smooth' });
+       return;
+     }
+
+     const extUrl = this.activeBook?.external_link || this.activeBook?.externalLink;
+     if (extUrl) {
+       this.readerTab = 'external';
        window.scrollTo({ top: 0, behavior: 'smooth' });
        return;
      }

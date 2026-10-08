@@ -20,7 +20,7 @@
   <!-- PDF-Lib untuk Stamping Watermark Dinamis -->
   <script defer src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.9/dist/pdf-lib.min.js"></script>
   <!-- Engine Logika Aplikasi -->
-  <script defer src="script.js"></script>
+  <script defer src="script.js?v=2.0"></script>
   <!-- Alpine.js -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   
@@ -1086,7 +1086,7 @@
                 <span>Baca Dokumen (PDF)</span>
               </button>
             </template>
-            <button @click="startReading(0)" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs md:text-sm font-semibold shadow-md shadow-indigo-600/30 transition flex items-center justify-center gap-2 text-center">
+            <button @click="if (activeBook?.fileUrl || activeBook?.file_url) { readerTab = 'document'; stopTTS(); loadSignedUrlForActiveBook(); } else if (activeBook?.external_link) { readerTab = 'external'; stopTTS(); } else { startReading(0); }" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs md:text-sm font-semibold shadow-md shadow-indigo-600/30 transition flex items-center justify-center gap-2 text-center">
               <span x-text="activeBook?.accessType === 'Berbayar' && !purchasedBookIds.includes(activeBook?.id) ? 'Baca Pratinjau (Bab 1)' : 'Mulai Baca Bab 1'"></span>
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
             </button>
@@ -1101,7 +1101,7 @@
             <h4 class="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-slate-400 mb-3">Daftar Bab Tersedia:</h4>
             <div class="space-y-2">
               <template x-for="(ch, idx) in activeBook?.chapters" :key="idx">
-                <div @click="startReading(idx)" class="p-3 bg-stone-50 dark:bg-slate-800/60 hover:bg-indigo-50/70 dark:hover:bg-indigo-950/40 border border-stone-200/80 dark:border-slate-700/80 rounded-xl cursor-pointer transition flex items-center justify-between text-xs group">
+                <div @click="if (activeBook?.fileUrl || activeBook?.file_url) { readerTab = 'document'; stopTTS(); loadSignedUrlForActiveBook(); } else if (activeBook?.external_link) { readerTab = 'external'; stopTTS(); } else { startReading(idx); }" class="p-3 bg-stone-50 dark:bg-slate-800/60 hover:bg-indigo-50/70 dark:hover:bg-indigo-950/40 border border-stone-200/80 dark:border-slate-700/80 rounded-xl cursor-pointer transition flex items-center justify-between text-xs group">
                   <span class="font-medium text-stone-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400" x-text="`Bab ${idx + 1}: ${ch.title}`"></span>
                   <div class="flex items-center gap-2">
                     <span x-show="activeBook?.accessType === 'Berbayar' && !purchasedBookIds.includes(activeBook?.id) && idx > 0" class="text-[11px] text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
@@ -1155,7 +1155,7 @@
     </div>
 
     <!-- TAMPILAN EMBEDDED VIEWER (DOKUMEN DI DALAM HALAMAN) -->
-    <div x-show="readerTab === 'document' && activeBook?.fileUrl" class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm mb-6" x-transition>
+    <div x-show="readerTab === 'document' && (activeBook?.fileUrl || activeBook?.file_url)" class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm mb-6" x-transition>
       <div class="px-4 py-3 bg-slate-50 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
         <div class="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-medium truncate">
           <svg class="w-4 h-4 text-indigo-600 dark:text-indigo-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
