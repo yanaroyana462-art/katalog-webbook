@@ -1214,6 +1214,7 @@
         <iframe 
           :src="activeBook?.external_link" 
           class="w-full h-full flex-1 rounded-b-xl border-0" 
+          sandbox="allow-scripts allow-same-origin allow-forms"
           title="WebBook Viewer"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
         ></iframe>
@@ -3420,7 +3421,6 @@
                 error = retry.error;
               }
               if (error) throw error;
-              if (!retry && !error) { /* update sukses */ }
             }
 
             if (this.currentUser) {
@@ -3719,14 +3719,19 @@
         },
 
         startTTS() {
-          if (!('speechSynthesis' in window)) {
+          if (!('speechSynthesis' in window) || !window.speechSynthesis) {
             alert('Browser Anda belum mendukung fitur Text-to-Speech.');
             return;
           }
 
           this.stopTTS();
 
-          const rawHtml = this.activeBook.chapters[this.currentChapterIndex].content;
+          const currentChapter = this.activeBook?.chapters?.[this.currentChapterIndex];
+          const rawHtml = currentChapter ? (typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(currentChapter.content) : currentChapter.content) : '';
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = rawHtml;
+          const textToRead = (tempDiv.innerText || tempDiv.textContent || '').trim();
+
           const tempDiv = document.createElement('div');
           tempDiv.innerHTML = rawHtml;
           const textToRead = tempDiv.innerText || tempDiv.textContent;
@@ -3735,16 +3740,25 @@
           utterance.lang = 'id-ID';
           utterance.rate = 0.95;
 
-          utterance.onend = () => { this.isSpeaking = false; };
-          utterance.onerror = () => { this.isSpeaking = false; };
+          if (!textToRead) {
+            alert('Tidak ada materi teks pada bab ini untuk dibacakan.');
+            return;
+          }
 
+          utterance.onend = () => { this.isSpeaking = false; };
+          utterance.onerror = (e) => {
+            console.warn('Speech synthesis error:', e);
+            this.isSpeaking = false;
+          };
+
+          this.synth = window.speechSynthesis;
           this.synth.speak(utterance);
           this.isSpeaking = true;
         },
 
         stopTTS() {
-          if (this.synth) {
-            this.synth.cancel();
+          if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
           }
           this.isSpeaking = false;
         }
