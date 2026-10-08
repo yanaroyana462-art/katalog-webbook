@@ -17,6 +17,8 @@
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- DOMPurify untuk Proteksi Sanitasi XSS -->
   <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
+  <!-- PDF-Lib untuk Stamping Watermark Dinamis -->
+  <script defer src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.9/dist/pdf-lib.min.js"></script>
   <!-- Alpine.js -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   
@@ -1130,9 +1132,14 @@
             <span x-text="isEmbedFullscreen ? 'Kecilkan' : 'Layar Penuh'"></span>
           </button>
           <template x-if="canDownloadBook(activeBook)">
-            <button type="button" @click="downloadPDF(activeBook)" class="text-indigo-600 dark:text-indigo-400 hover:underline text-xs flex items-center gap-1 font-semibold">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-              <span>Unduh PDF</span>
+            <button type="button" @click="downloadPDF(activeBook)" :disabled="isDownloadingPdf" class="text-indigo-600 dark:text-indigo-400 hover:underline text-xs flex items-center gap-1 font-semibold disabled:opacity-50">
+              <template x-if="isDownloadingPdf">
+                <svg class="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+              </template>
+              <template x-if="!isDownloadingPdf">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+              </template>
+              <span x-text="isDownloadingPdf ? 'Menerapkan Watermark...' : 'Unduh PDF'"></span>
             </button>
           </template>
           <template x-if="!canDownloadBook(activeBook)">
@@ -1537,6 +1544,7 @@
         readerTab: 'overview', // 'overview' | 'text' | 'document' | 'external'
         isEmbedFullscreen: false,
         activeBookSignedUrl: '',
+        isDownloadingPdf: false,
         isLoadingDocument: false,
         currentChapterIndex: 0,
         isSpeaking: false,
