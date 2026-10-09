@@ -504,7 +504,7 @@
              @drop.prevent="handleFileDrop($event)">
           
           <input type="file" id="bookFile" ref="fileInput" @change="handleFileChange($event)"
-                 accept=".pdf,.epub,.docx,.doc,.txt,.md,.markdown,.json,.html"
+               accept=".pdf,application/pdf,.epub,.docx,.doc,.txt,.md,.markdown,.json,.html"
                  class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
           
           <!-- Tampilan Belum Ada File -->
@@ -1219,7 +1219,7 @@
             <div x-show="isLoadingDocument" class="absolute inset-0 flex items-center justify-center bg-slate-100 dark:bg-slate-900 z-10 text-xs text-slate-500">
               <span class="animate-pulse">Menyiapkan akses dokumen privat...</span>
             </div>
-            <iframe :src="getEmbedUrl(activeBookSignedUrl || activeBook?.fileUrl)" class="w-full h-full flex-1 rounded-b-xl border-0" allow="fullscreen"></iframe>
+            <iframe :src="getEmbedUrl(activeBookSignedUrl || activeBook?.fileUrl, activeBook?.fileName)" class="w-full h-full flex-1 rounded-b-xl border-0" allow="fullscreen"></iframe>
           </div>
         </template>
         <template x-if="!canDownloadBook(activeBook)">

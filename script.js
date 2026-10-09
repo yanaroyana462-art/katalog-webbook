@@ -807,11 +807,14 @@ function portalEngine() {
    },
 
    async uploadToStorage(bucketName, filePath, file) {
+     const fileExtension = file.name.split('.').pop().toLowerCase();
+     const contentType = fileExtension === 'pdf' ? 'application/pdf' : file.type || 'application/octet-stream';
      const { error: uploadError } = await this.supabaseClient.storage
        .from(bucketName)
        .upload(filePath, file, {
          cacheControl: '3600',
-         upsert: true
+         upsert: true,
+         contentType
        });
 
      if (uploadError) {
@@ -1173,12 +1176,10 @@ function portalEngine() {
      return rawHtml;
    },
 
-   getEmbedUrl(url) {
+   getEmbedUrl(url, fileName = '') {
      if (!url) return '';
-     const lower = url.toLowerCase();
-     return (lower.endsWith('.pdf') || lower.includes('.pdf?')) 
-       ? url 
-       : `<https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true>`;
+     if (/\.pdf$/i.test(fileName) || /\.pdf(?:$|[?#])/i.test(url)) return url;
+     return `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(url)}`;
    },
 
    async deleteBook(book) {
