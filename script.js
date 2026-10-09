@@ -577,7 +577,7 @@ function portalEngine() {
      external_link: '',
      blurb: '',
      chapters: [
-       { title: '', content: '' }
+       { title: '', content: '', subchapters: [] }
      ],
      file: null,
      fileName: '',
@@ -587,13 +587,63 @@ function portalEngine() {
    },
 
    addChapter() {
-     this.uploadForm.chapters.push({ title: '', content: '' });
+     this.uploadForm.chapters.push({ title: '', content: '', subchapters: [] });
+   },
+
+   addSubchapter(index) {
+     this.uploadForm.chapters[index].subchapters.push({ title: '', content: '' });
+   },
+
+   removeSubchapter(chapterIndex, subchapterIndex) {
+     this.uploadForm.chapters[chapterIndex].subchapters.splice(subchapterIndex, 1);
    },
 
    removeChapter(index) {
      if (this.uploadForm.chapters.length > 1) {
        this.uploadForm.chapters.splice(index, 1);
      }
+   },
+
+   getChapterSubchapter(chapter) {
+     const match = chapter?.title?.match(/^\[subbab:(\d+)\.(\d+)\]\s*(.*)$/i);
+     if (!match) return null;
+     return { parentIndex: Number(match[1]), subchapterIndex: Number(match[2]), title: match[3] };
+   },
+
+   isSubchapter(chapter) {
+     return Boolean(this.getChapterSubchapter(chapter));
+   },
+
+   getChapterDisplayTitle(chapter) {
+     return this.getChapterSubchapter(chapter)?.title || chapter?.title || '';
+   },
+
+   getChapterLabel(chapter, index) {
+     const subchapter = this.getChapterSubchapter(chapter);
+     const chapterNumber = this.activeBook?.chapters
+       ? this.activeBook.chapters.slice(0, index + 1).filter(item => !this.isSubchapter(item)).length
+       : index + 1;
+     return subchapter ? `Subbab ${subchapter.parentIndex}.${subchapter.subchapterIndex}` : `Bab ${chapterNumber}`;
+   },
+
+   prepareChaptersForEditing(chapters) {
+     const mainChapters = [];
+     chapters.forEach(chapter => {
+       const subchapter = this.getChapterSubchapter(chapter);
+       if (subchapter && mainChapters[subchapter.parentIndex - 1]) {
+         mainChapters[subchapter.parentIndex - 1].subchapters.push({
+           title: subchapter.title,
+           content: chapter.content || ''
+         });
+       } else {
+         mainChapters.push({
+           title: subchapter ? subchapter.title : chapter.title || '',
+           content: chapter.content || '',
+           subchapters: []
+         });
+       }
+     });
+     return mainChapters.length ? mainChapters : [{ title: '', content: '', subchapters: [] }];
    },
 
    // Data Katalogs
@@ -791,12 +841,13 @@ function portalEngine() {
      }
 
      const userChapters = this.uploadForm.chapters
-       .filter(chap => chap.title.trim() || chap.content.trim())
+       .filter(chap => chap.title.trim() || chap.content.trim() || chap.subchapters?.some(subchap => subchap.title.trim() || subchap.content.trim()))
        .map((chap, idx) => ({
          title: chap.title.trim() || `Bab ${idx + 1}: ${this.uploadForm.title.trim() || 'Materi'}`,
          content: chap.content.trim() || (idx === 0 
            ? `<p>${this.uploadForm.blurb.trim()}</p><p class="text-xs text-slate-500 mt-4 italic">Dokumen terlampir: ${this.uploadForm.fileName || 'Tidak ada file fisik'}</p>`
-           : '<p class="text-slate-400 italic">Konten bab ini belum tersedia.</p>')
+           : '<p class="text-slate-400 italic">Konten bab ini belum tersedia.</p>'),
+         subchapters: chap.subchapters || []
        }));
 
      const concludingChapters = [];
@@ -813,7 +864,19 @@ function portalEngine() {
        });
      }
 
-     let formattedChapters = [...preliminaryChapters, ...userChapters, ...concludingChapters];
+     const formattedUserChapters = userChapters.flatMap((chapter, index) => {
+       const parentIndex = preliminaryChapters.length + index + 1;
+       return [
+         { title: chapter.title, content: chapter.content },
+         ...chapter.subchapters
+           .filter(subchapter => subchapter.title.trim() || subchapter.content.trim())
+           .map((subchapter, subIndex) => ({
+             title: `[subbab:${parentIndex}.${subIndex + 1}] ${subchapter.title.trim() || `Subbab ${parentIndex}.${subIndex + 1}`}`,
+             content: subchapter.content.trim() || '<p class="text-slate-400 italic">Konten subbab ini belum tersedia.</p>'
+           }))
+       ];
+     });
+     let formattedChapters = [...preliminaryChapters, ...formattedUserChapters, ...concludingChapters];
      if (formattedChapters.length === 0) {
        formattedChapters = [{
          title: `Bab 1: Pengantar ${this.uploadForm.title.trim() || 'Materi'}`,
@@ -1059,7 +1122,7 @@ function portalEngine() {
      this.uploadForm.coverFile = null;
      this.uploadForm.external_link = '';
      this.uploadForm.fileUrl = '';
-     this.uploadForm.chapters = [{ title: '', content: '' }];
+    this.uploadForm.chapters = [{ title: '', content: '', subchapters: [] }];
      this.currentView = 'catalog';
      window.scrollTo({ top: 0, behavior: 'smooth' });
    },
@@ -1322,7 +1385,7 @@ function portalEngine() {
        coverFile: null,
        external_link: b.external_link || '',
        blurb: b.blurb || '',
-       chapters: b.chapters && b.chapters.length ? JSON.parse(JSON.stringify(b.chapters)) : [{ title: '', content: '' }],
+        chapters: b.chapters && b.chapters.length ? this.prepareChaptersForEditing(JSON.parse(JSON.stringify(b.chapters))) : [{ title: '', content: '', subchapters: [] }],
        file: null,
        fileName: b.fileName || '',
        fileSize: '',
@@ -1344,10 +1407,7 @@ function portalEngine() {
            .order('chapter_order', { ascending: true });
 
          if (!error && data && data.length > 0) {
-           this.uploadForm.chapters = data.map(ch => ({
-             title: ch.title || '',
-             content: ch.content || ''
-           }));
+           this.uploadForm.chapters = this.prepareChaptersForEditing(data);
          }
        } catch (err) {
          console.error('Gagal mengambil bab sebelumnya:', err);
@@ -1370,7 +1430,7 @@ function portalEngine() {
      this.uploadForm.coverFile = null;
      this.uploadForm.external_link = '';
      this.uploadForm.fileUrl = '';
-     this.uploadForm.chapters = [{ title: '', content: '' }];
+    this.uploadForm.chapters = [{ title: '', content: '', subchapters: [] }];
    },
 
    closeEditModal() {
