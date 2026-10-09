@@ -31,6 +31,7 @@ function portalEngine() {
     isLoadingDocument: false,
     currentChapterIndex: 0,
     isSpeaking: false,
+    ttsSessionId: 0,
     synth: window.speechSynthesis,
     readerFontSize: 16,
 
@@ -1846,6 +1847,33 @@ function portalEngine() {
      }
    },
 
+   createTTSChunks(text, maxLength = 220) {
+     const chunks = [];
+     let currentChunk = '';
+     const words = text.trim().split(/\s+/);
+     words.forEach(word => {
+       let part = word;
+       while (part.length > maxLength) {
+         if (currentChunk) {
+           chunks.push(currentChunk);
+           currentChunk = '';
+         }
+         chunks.push(part.slice(0, maxLength));
+         part = part.slice(maxLength);
+       }
+
+       if (!part) return;
+       if (currentChunk && currentChunk.length + part.length + 1 > maxLength) {
+         chunks.push(currentChunk);
+         currentChunk = '';
+       }
+       currentChunk = currentChunk ? `${currentChunk} ${part}` : part;
+     });
+
+     if (currentChunk) chunks.push(currentChunk);
+     return chunks;
+   },
+
    startTTS() {
      if (!('speechSynthesis' in window) || !window.speechSynthesis) {
        this.showToast('Browser Anda belum mendukung fitur Text-to-Speech.', 'error');
@@ -1858,29 +1886,53 @@ function portalEngine() {
      const rawHtml = currentChapter ? this.getSanitizedContent(currentChapter.content) : '';
      const tempDiv = document.createElement('div');
      tempDiv.innerHTML = rawHtml;
-     const textToRead = (tempDiv.innerText || tempDiv.textContent || '').trim();
-
-     const utterance = new SpeechSynthesisUtterance(textToRead);
-     utterance.lang = 'id-ID';
-     utterance.rate = 0.95;
+     const textToRead = (tempDiv.textContent || '').replace(/\s+/g, ' ').trim();
 
      if (!textToRead) {
        this.showToast('Tidak ada materi teks pada bab ini untuk dibacakan.', 'info');
        return;
      }
 
-     utterance.onend = () => { this.isSpeaking = false; };
-     utterance.onerror = (e) => {
-       console.warn('Speech synthesis error:', e);
-       this.isSpeaking = false;
+     const chunks = this.createTTSChunks(textToRead);
+     const sessionId = this.ttsSessionId;
+     let chunkIndex = 0;
+     this.synth = window.speechSynthesis;
+     this.isSpeaking = true;
+
+     const speakNextChunk = () => {
+       if (sessionId !== this.ttsSessionId) return;
+       if (chunkIndex >= chunks.length) {
+         this.isSpeaking = false;
+         return;
+       }
+
+       const utterance = new SpeechSynthesisUtterance(chunks[chunkIndex++]);
+       utterance.lang = 'id-ID';
+       utterance.rate = 0.95;
+       utterance.onend = speakNextChunk;
+       utterance.onerror = event => {
+         if (sessionId !== this.ttsSessionId) return;
+         console.warn('Speech synthesis error:', event);
+         this.isSpeaking = false;
+         if (!['canceled', 'interrupted'].includes(event.error)) {
+           this.showToast('Audio gagal diputar. Periksa dukungan suara di browser Anda.', 'error');
+         }
+       };
+
+       try {
+         this.synth.speak(utterance);
+       } catch (error) {
+         console.warn('Speech synthesis error:', error);
+         this.isSpeaking = false;
+         this.showToast('Audio gagal diputar. Periksa dukungan suara di browser Anda.', 'error');
+       }
      };
 
-     this.synth = window.speechSynthesis;
-     this.synth.speak(utterance);
-     this.isSpeaking = true;
+     speakNextChunk();
    },
 
    stopTTS() {
+     this.ttsSessionId++;
      if (window.speechSynthesis) {
        window.speechSynthesis.cancel();
      }
