@@ -109,7 +109,13 @@ function portalEngine() {
         website: ''
       },
       price: 0,
-      external_link: ''
+      external_link: '',
+      publisher: '',
+      publicationYear: '',
+      isbn: '',
+      sourceUrl: '',
+      rightsType: '',
+      rightsAccepted: false
     },
 
     // State Filter
@@ -227,6 +233,13 @@ function portalEngine() {
               authorBio: item.author_bio || null,
               authorPhoto: item.author_photo || null,
               authorLinks: item.author_links || null,
+              publisher: item.publisher || '',
+              publicationYear: item.publication_year || '',
+              isbn: item.isbn || '',
+              sourceUrl: item.source_url || '',
+              rightsType: item.rights_type || '',
+              rightsConfirmedAt: item.rights_confirmed_at || null,
+              rightsConfirmedBy: item.rights_confirmed_by || null,
               createdAt: item.created_at ? item.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
               blurb: item.blurb,
               accessType: item.access_type || 'Gratis',
@@ -546,6 +559,12 @@ function portalEngine() {
      coverFile: null,
      external_link: '',
      blurb: '',
+    publisher: '',
+    publicationYear: '',
+    isbn: '',
+    sourceUrl: '',
+    rightsType: '',
+    rightsAccepted: false,
      chapters: [
        { title: '', content: '', subchapters: [] }
      ],
@@ -799,6 +818,11 @@ function portalEngine() {
    },
 
    async saveNewBook() {
+     if (!this.uploadForm.rightsAccepted || !this.uploadForm.rightsType) {
+       this.showToast('Pilih dasar hak dan setujui pernyataan hak cipta sebelum menyimpan buku.', 'error');
+       return;
+     }
+
      const preliminaryChapters = [];
      if (this.uploadForm.foreword && this.uploadForm.foreword.trim()) {
        preliminaryChapters.push({
@@ -902,7 +926,8 @@ function portalEngine() {
              blurb: this.uploadForm.blurb.trim(),
              external_link: this.uploadForm.external_link?.trim() || null,
              file_url: this.uploadForm.fileUrl || fileUrlToSave,
-             file_name: this.uploadForm.fileName || null
+             file_name: this.uploadForm.fileName || null,
+             ...this.getBookMetadataPayload(this.uploadForm)
            };
 
            const { data: updatedData, error: updateErr } = await this.supabaseClient
@@ -938,6 +963,13 @@ function portalEngine() {
        if (bookIdx !== -1) {
          this.catalog[bookIdx].title = this.uploadForm.title.trim();
          this.catalog[bookIdx].author = this.uploadForm.author.trim();
+         this.catalog[bookIdx].publisher = this.uploadForm.publisher.trim() || null;
+         this.catalog[bookIdx].publicationYear = Number(this.uploadForm.publicationYear) || null;
+         this.catalog[bookIdx].isbn = this.uploadForm.isbn.trim() || null;
+         this.catalog[bookIdx].sourceUrl = this.safeUrl(this.uploadForm.sourceUrl) || null;
+         this.catalog[bookIdx].rightsType = this.uploadForm.rightsType;
+         this.catalog[bookIdx].rightsConfirmedAt = new Date().toISOString();
+         this.catalog[bookIdx].rightsConfirmedBy = this.currentUser?.id || null;
          this.catalog[bookIdx].chapters = formattedChapters;
          this.catalog[bookIdx].blurb = this.uploadForm.blurb.trim();
          this.catalog[bookIdx].price = Number(this.uploadForm.price) || 0;
@@ -977,6 +1009,13 @@ function portalEngine() {
        external_link: this.uploadForm.external_link.trim() || null,
        fileName: this.uploadForm.fileName || null,
        fileUrl: this.uploadForm.fileUrl || null,
+        publisher: this.uploadForm.publisher.trim() || null,
+        publicationYear: Number(this.uploadForm.publicationYear) || null,
+        isbn: this.uploadForm.isbn.trim() || null,
+        sourceUrl: this.safeUrl(this.uploadForm.sourceUrl) || null,
+        rightsType: this.uploadForm.rightsType,
+        rightsConfirmedAt: new Date().toISOString(),
+        rightsConfirmedBy: this.currentUser?.id || null,
        chapters: formattedChapters
      };
 
@@ -1021,7 +1060,8 @@ function portalEngine() {
            price: newBook.price,
            is_private: newBook.isPrivate,
            cover_url: newBook.coverUrl,
-           blurb: newBook.blurb
+           blurb: newBook.blurb,
+           ...this.getBookMetadataPayload(this.uploadForm)
          };
 
          if (this.currentUser?.id) bookPayload.user_id = this.currentUser.id;
@@ -1079,6 +1119,12 @@ function portalEngine() {
      this.catalog.unshift(newBook);
      this.clearFile();
      this.uploadForm.title = '';
+    this.uploadForm.publisher = '';
+    this.uploadForm.publicationYear = '';
+    this.uploadForm.isbn = '';
+    this.uploadForm.sourceUrl = '';
+    this.uploadForm.rightsType = '';
+    this.uploadForm.rightsAccepted = false;
      this.uploadForm.category = 'Teknologi & AI';
      this.uploadForm.isPrivate = 'false';
      this.uploadForm.fileName = '';
@@ -1120,6 +1166,36 @@ function portalEngine() {
      if (!url || typeof url !== 'string') return '';
      const trimmed = url.trim();
      return /^https?:\/\//i.test(trimmed) ? trimmed : '';
+   },
+
+   getBookMetadataPayload(form) {
+     return {
+       publisher: form.publisher.trim() || null,
+       publication_year: Number(form.publicationYear) || null,
+       isbn: form.isbn.trim() || null,
+       source_url: this.safeUrl(form.sourceUrl) || null,
+       rights_type: form.rightsType || null,
+       rights_confirmed_at: form.rightsAccepted ? new Date().toISOString() : null,
+       rights_confirmed_by: form.rightsAccepted ? this.currentUser?.id || null : null
+     };
+   },
+
+   hasBookMetadata(book) {
+     return Boolean(book?.publisher || book?.publicationYear || book?.isbn || book?.sourceUrl || book?.rightsType);
+   },
+
+   getRightsTypeLabel(rightsType) {
+     return {
+       original: 'Karya sendiri',
+       permission: 'Izin pemegang hak',
+       public_domain: 'Domain publik',
+       open_license: 'Lisensi terbuka'
+     }[rightsType] || 'Belum dicantumkan';
+   },
+
+   getReportBookUrl(book) {
+     const message = `Halo Admin, saya ingin melaporkan buku berikut:\nJudul: ${book.title}\nPenulis: ${book.author}\nTautan: ${this.getShareBookLink(book)}\n\nAlasan laporan: `;
+     return `https://wa.me/${this.adminWaNumber}?text=${encodeURIComponent(message)}`;
    },
 
    getAuthorInitials(name) {
@@ -1208,7 +1284,13 @@ function portalEngine() {
        authorPhotoFile: null,
        blurb: book.blurb,
        price: book.price || 0,
-       external_link: book.external_link || ''
+       external_link: book.external_link || '',
+       publisher: book.publisher || '',
+       publicationYear: book.publicationYear || '',
+       isbn: book.isbn || '',
+       sourceUrl: book.sourceUrl || '',
+       rightsType: book.rightsType || '',
+       rightsAccepted: Boolean(book.rightsConfirmedAt)
      };
      this.isEditModalOpen = true;
    },
@@ -1361,6 +1443,12 @@ function portalEngine() {
        coverFile: null,
        external_link: b.external_link || '',
        blurb: b.blurb || '',
+      publisher: b.publisher || '',
+      publicationYear: b.publicationYear || '',
+      isbn: b.isbn || '',
+      sourceUrl: b.sourceUrl || '',
+      rightsType: b.rightsType || '',
+      rightsAccepted: Boolean(b.rightsConfirmedAt),
         chapters: b.chapters && b.chapters.length ? this.prepareChaptersForEditing(JSON.parse(JSON.stringify(b.chapters))) : [{ title: '', content: '', subchapters: [] }],
        file: null,
        fileName: b.fileName || '',
@@ -1402,6 +1490,12 @@ function portalEngine() {
      this.uploadForm.glossary = '';
      this.uploadForm.bibliography = '';
      this.uploadForm.blurb = '';
+    this.uploadForm.publisher = '';
+    this.uploadForm.publicationYear = '';
+    this.uploadForm.isbn = '';
+    this.uploadForm.sourceUrl = '';
+    this.uploadForm.rightsType = '';
+    this.uploadForm.rightsAccepted = false;
      this.uploadForm.coverUrl = '';
      this.uploadForm.coverFile = null;
      this.uploadForm.external_link = '';
@@ -1417,6 +1511,10 @@ function portalEngine() {
 
    async updateBook() {
      if (!this.editForm.title.trim() || !this.editForm.author.trim()) return;
+     if (!this.editForm.rightsAccepted || !this.editForm.rightsType) {
+       this.showToast('Pilih dasar hak dan setujui pernyataan hak cipta sebelum menyimpan perubahan.', 'error');
+       return;
+     }
      this.isUpdatingBook = true;
 
      try {
@@ -1431,6 +1529,7 @@ function portalEngine() {
        }
 
        const calculatedAccess = Number(this.editForm.price) > 0 ? 'Berbayar' : 'Gratis';
+      const metadataPayload = this.getBookMetadataPayload(this.editForm);
        const payload = {
          title: this.editForm.title.trim(),
          author: this.editForm.author.trim(),
@@ -1440,7 +1539,8 @@ function portalEngine() {
          blurb: this.editForm.blurb.trim(),
          access_type: calculatedAccess,
          price: Number(this.editForm.price) || 0,
-         external_link: this.editForm.external_link ? this.editForm.external_link.trim() : null
+         external_link: this.editForm.external_link ? this.editForm.external_link.trim() : null,
+         ...metadataPayload
        };
 
        if (this.supabaseClient) {
@@ -1484,28 +1584,31 @@ function portalEngine() {
        }
 
        const bookIndex = this.catalog.findIndex(b => b.id === this.editForm.id);
+       const updatedBookFields = {
+         title: payload.title,
+         author: payload.author,
+         authorBio: payload.author_bio,
+         authorPhoto: payload.author_photo,
+         authorLinks: payload.author_links,
+         blurb: payload.blurb,
+         price: payload.price,
+         accessType: payload.access_type,
+         external_link: payload.external_link,
+         publisher: metadataPayload.publisher,
+         publicationYear: metadataPayload.publication_year,
+         isbn: metadataPayload.isbn,
+         sourceUrl: metadataPayload.source_url,
+         rightsType: metadataPayload.rights_type,
+         rightsConfirmedAt: metadataPayload.rights_confirmed_at,
+         rightsConfirmedBy: metadataPayload.rights_confirmed_by,
+         rightsConfirmedBy: metadataPayload.rights_confirmed_by
+       };
        if (bookIndex !== -1) {
-         this.catalog[bookIndex].title = payload.title;
-         this.catalog[bookIndex].author = payload.author;
-         this.catalog[bookIndex].authorBio = payload.author_bio;
-         this.catalog[bookIndex].authorPhoto = payload.author_photo;
-         this.catalog[bookIndex].authorLinks = payload.author_links;
-         this.catalog[bookIndex].blurb = payload.blurb;
-         this.catalog[bookIndex].price = payload.price;
-         this.catalog[bookIndex].accessType = payload.access_type;
-         this.catalog[bookIndex].external_link = payload.external_link;
+         Object.assign(this.catalog[bookIndex], updatedBookFields);
        }
 
        if (this.activeBook?.id === this.editForm.id) {
-         this.activeBook.title = payload.title;
-         this.activeBook.author = payload.author;
-         this.activeBook.authorBio = payload.author_bio;
-         this.activeBook.authorPhoto = payload.author_photo;
-         this.activeBook.authorLinks = payload.author_links;
-         this.activeBook.blurb = payload.blurb;
-         this.activeBook.accessType = payload.access_type;
-         this.activeBook.price = payload.price;
-         this.activeBook.external_link = payload.external_link;
+         Object.assign(this.activeBook, updatedBookFields);
        }
 
        this.closeEditModal();
