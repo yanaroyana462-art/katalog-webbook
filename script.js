@@ -82,6 +82,8 @@ function portalEngine() {
     isShareModalOpen: false,
     shareBookData: null,
     isLinkCopied: false,
+    isCopywritingCopied: false,
+    shareCopywriting: '',
     get isNativeShareSupported() {
       return typeof navigator !== 'undefined' && Boolean(navigator.share);
     },
@@ -1317,7 +1319,9 @@ function portalEngine() {
    shareBook(book) {
      if (!book) return;
      this.shareBookData = book;
+     this.shareCopywriting = `Temukan wawasan baru dari "${book.title}" karya ${book.author}.`;
      this.isLinkCopied = false;
+     this.isCopywritingCopied = false;
      this.isShareModalOpen = true;
    },
 
@@ -1325,6 +1329,8 @@ function portalEngine() {
      this.isShareModalOpen = false;
      this.shareBookData = null;
      this.isLinkCopied = false;
+    this.isCopywritingCopied = false;
+    this.shareCopywriting = '';
    },
 
    getShareBookLink(book) {
@@ -1338,20 +1344,42 @@ function portalEngine() {
      if (!this.shareBookData) return '#';
      const book = this.shareBookData;
      const shareUrl = this.getShareBookLink(book);
-     const text = `Baca "${book.title}" karya ${book.author} di Pustaka WebBook:\n`;
+     const text = this.shareCopywriting.trim() || `Baca "${book.title}" karya ${book.author} di Pustaka WebBook.`;
      
      switch (platform) {
        case 'whatsapp':
-         return `<https://wa.me/?text=${encodeURIComponent(text> + shareUrl)}`;
+         return `https://wa.me/?text=${encodeURIComponent(`${text}\n\n${shareUrl}`)}`;
        case 'x':
-         return `<https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}>`;
+         return `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
        case 'telegram':
-         return `<https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(text)}>`;
+         return `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(text)}`;
        case 'facebook':
-         return `<https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}>`;
+         return `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(text)}`;
        default:
          return '#';
      }
+   },
+
+   getShareMessage(book) {
+     if (!book) return '';
+     const text = this.shareCopywriting.trim() || `Baca "${book.title}" karya ${book.author} di Pustaka WebBook.`;
+     return `${text}\n\n${this.getShareBookLink(book)}`;
+   },
+
+   async copyShareCopywriting(book) {
+     const message = this.getShareMessage(book);
+     try {
+       await navigator.clipboard.writeText(message);
+     } catch (e) {
+       const temp = document.createElement('textarea');
+       temp.value = message;
+       document.body.appendChild(temp);
+       temp.select();
+       document.execCommand('copy');
+       document.body.removeChild(temp);
+     }
+     this.isCopywritingCopied = true;
+     setTimeout(() => { this.isCopywritingCopied = false; }, 2500);
    },
 
    async copyShareLink(book) {
@@ -1376,7 +1404,7 @@ function portalEngine() {
      try {
        await navigator.share({
          title: book.title,
-         text: `Baca "${book.title}" karya ${book.author} di Pustaka WebBook`,
+           text: this.shareCopywriting.trim() || `Baca "${book.title}" karya ${book.author} di Pustaka WebBook`,
          url: shareUrl
        });
      } catch (e) {
