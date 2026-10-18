@@ -494,42 +494,6 @@ function portalEngine() {
         };
         await this.saveAuthorProfileLocally(updated);
 
-        if (this.supabaseClient && this.currentUser) {
-          const bookPayload = {
-            author: updated.author,
-            author_bio: updated.authorBio || null,
-            author_photo: updated.authorPhoto || null,
-            author_links: updated.authorLinks || null
-          };
-
-          let { error: bookUpdateErr } = await this.supabaseClient
-            .from('books')
-            .update(bookPayload)
-            .eq('user_id', this.currentUser.id);
-
-         if (bookUpdateErr && (bookUpdateErr.message?.includes('author_bio') || bookUpdateErr.message?.includes('author_photo') || bookUpdateErr.message?.includes('author_links'))) {
-           delete bookPayload.author_bio;
-           delete bookPayload.author_photo;
-           delete bookPayload.author_links;
-           await this.supabaseClient
-             .from('books')
-             .update(bookPayload)
-             .eq('user_id', this.currentUser.id);
-         }
-       }
-
-       this.catalog.forEach(b => {
-         if (this.currentUser && b.userId === this.currentUser.id) {
-           b.author = updated.author;
-           b.authorBio = updated.authorBio;
-           b.authorPhoto = updated.authorPhoto;
-           b.authorLinks = updated.authorLinks;
-         }
-       });
-
-       if (this.activeBook && this.currentUser && this.activeBook.userId === this.currentUser.id) {
-         Object.assign(this.activeBook, updated);
-       }
        await this.loadAuthorProfile();
 
        this.uploadForm.author = updated.author;
