@@ -3,6 +3,7 @@ const SUPABASE_URL = 'https://klumtyeooujhonbrhnzv.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_GFJBw5j2h8_AdR_ge2ci-Q_WtiBCFtb';
 const SUPABASE_STORAGE_BUCKET = 'books'; // Nama Supabase Storage Bucket (Public)
 const ADMIN_WHATSAPP_NUMBER = '6285794506290'; // Sesuaikan dengan nomor WhatsApp Admin (awali dengan 62)
+const ADMIN_EMAIL = 'yanaroyana462@gmail.com';
 
 function portalEngine() {
   return {
@@ -58,6 +59,10 @@ function portalEngine() {
 
     get book() {
       return this.activeBook;
+    },
+
+    get isAdmin() {
+      return this.currentUser?.email?.toLowerCase() === ADMIN_EMAIL;
     },
 
     // State Modal Checkout Pembayaran
@@ -1148,6 +1153,11 @@ function portalEngine() {
    },
 
    async deleteBook(book) {
+     if (!this.currentUser || (book.userId !== this.currentUser.id && !this.isAdmin)) {
+       this.showToast('Anda tidak memiliki izin untuk menghapus buku ini.', 'error');
+       return;
+     }
+
      if (!confirm(`Apakah Anda yakin ingin menghapus buku "${book.title}"?`)) {
        return;
      }
