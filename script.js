@@ -1868,33 +1868,19 @@ function portalEngine() {
      const invoiceId = 'WB-' + Date.now().toString(36).toUpperCase();
 
      const waText = `Halo Admin Pustaka WebBook,\n\nSaya ingin mengonfirmasi pesanan buku:\n🧾 *No. Invoice*: ${invoiceId}\n📖 *Judul*: ${this.checkoutBook?.title}\n✍️ *Penulis*: ${this.checkoutBook?.author}\n💰 *Harga*: ${formattedPrice}\n💳 *Metode*: ${methodName}\n👤 *Akun*: ${userEmail}\n\nMohon petunjuk rekening/QRIS pembayaran dan aktivasi akses buku saya. Terima kasih!`;
-     const waUrl = `<https://wa.me/${this.adminWaNumber}?text=${encodeURIComponent(waText)}>`;
-     
-     if (this.supabaseClient && this.currentUser && this.checkoutBook) {
-       try {
-         await this.supabaseClient.from('purchases').upsert([{
-           user_id: this.currentUser.id,
-           book_id: this.checkoutBook.id
-         }], { onConflict: 'user_id,book_id' });
-       } catch (err) {
-         console.error('Gagal mencatat transaksi di Supabase:', err);
-       }
+     const waUrl = `https://wa.me/${this.adminWaNumber}?text=${encodeURIComponent(waText)}`;
+
+     if (!this.currentUser || !this.checkoutBook) {
+       this.showToast('Silakan masuk sebelum mengajukan pembelian buku.', 'error');
+       this.isProcessingPayment = false;
+       return;
      }
 
-     setTimeout(() => {
-       if (this.checkoutBook) {
-         if (!this.purchasedBookIds.includes(this.checkoutBook.id)) {
-           this.purchasedBookIds.push(this.checkoutBook.id);
-           localStorage.setItem('purchasedBookIds', JSON.stringify(this.purchasedBookIds));
-         }
-         const bookToOpen = this.checkoutBook;
-         this.isProcessingPayment = false;
-         this.isPaymentModalOpen = false;
-
-         window.open(waUrl, '_blank');
-         this.openBook(bookToOpen);
-       }
-     }, 1200);
+     window.open(waUrl, '_blank', 'noopener,noreferrer');
+     this.isProcessingPayment = false;
+     this.isPaymentModalOpen = false;
+     this.checkoutBook = null;
+     this.showToast('Permintaan dikirim. Akses buku aktif setelah pembayaran diverifikasi admin.', 'info');
    },
 
    formatCurrency(amount) {
