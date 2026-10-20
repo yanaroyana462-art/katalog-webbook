@@ -447,7 +447,7 @@ function portalEngine() {
   } catch (e) {
     console.warn('Gagal memuat profil penulis:', e);
   }
-}
+},
 
     clearAuthorProfileFromForm() {
       this.uploadForm.author = '';
@@ -534,7 +534,7 @@ function portalEngine() {
   } finally {
     this.isUpdatingProfile = false;
   }
-}
+},
 
    // Form Upload State
    isDragging: false,
@@ -1471,7 +1471,7 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
    formatWhatsappUrl(wa) {
      if (!wa) return '#';
      const clean = wa.replace(/\D/g, '').replace(/^0/, '62');
-     return `<https://wa.me/${clean}>`;
+     return `https://wa.me/${clean}`;
    },
 
    async editInFullForm() {
@@ -1655,7 +1655,6 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
          rightsType: metadataPayload.rights_type,
          rightsConfirmedAt: metadataPayload.rights_confirmed_at,
          rightsConfirmedBy: metadataPayload.rights_confirmed_by,
-         rightsConfirmedBy: metadataPayload.rights_confirmed_by
        };
        if (bookIndex !== -1) {
          Object.assign(this.catalog[bookIndex], updatedBookFields);
