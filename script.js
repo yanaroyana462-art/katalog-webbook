@@ -195,34 +195,25 @@ function portalEngine() {
     },
 
     async fetchBooks() {
-      if (!this.supabaseClient) return;
-      try {
-        const { data, error } = await this.supabaseClient
-          .from('books')
-          .select('*')
-          .order('created_at', { ascending: false });
+  if (!this.supabaseClient) return;
+  try {
+    const booksReq = this.supabaseClient.from('books').select('*').order('created_at', { ascending: false });
+    const chaptersReq = this.supabaseClient.from('chapters').select('id, book_id, title, chapter_order, is_preview').order('chapter_order', { ascending: true });
+    const [booksRes, chRes] = await Promise.all([booksReq, chaptersReq]);
+    const { data, error } = booksRes;
+    if (error) throw error;
 
-        if (error) throw error;
-
-        if (data && data.length > 0) {
-          const chaptersByBook = {};
-          try {
-            const { data: chData } = await this.supabaseClient
-              .from('chapters')
-              .select('id, book_id, title, chapter_order, is_preview')
-              .order('chapter_order', { ascending: true });
-
-            if (chData) {
-              chData.forEach(ch => {
-                const bId = String(ch.book_id);
-                if (!chaptersByBook[bId]) chaptersByBook[bId] = [];
-                chaptersByBook[bId].push(ch);
-              });
-            }
-          } catch (chErr) {
-            console.warn('Gagal memuat relasi chapters:', chErr);
-          }
-
+    if (data && data.length > 0) {
+      const chaptersByBook = {};
+      if (chRes.error) {
+        console.warn('Gagal memuat relasi chapters:', chRes.error);
+      } else {
+        (chRes.data || []).forEach(ch => {
+          const bId = String(ch.book_id);
+          if (!chaptersByBook[bId]) chaptersByBook[bId] = [];
+          chaptersByBook[bId].push(ch);
+        });
+      }
           this.catalog = data.map(item => {
             const bookIdStr = String(item.id);
             const bookChapters = chaptersByBook[bookIdStr] || (Array.isArray(item.chapters) && item.chapters.length > 0 ? item.chapters : null);
@@ -796,14 +787,34 @@ function portalEngine() {
        this.$refs.fileInput.value = '';
      }
    },
-
+async compressImage(file, maxWidth = 600, quality = 0.78) {
+  if (!file.type.startsWith('image/') || /svg|gif/.test(file.type)) return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, maxWidth / bitmap.width);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    if (bitmap.close) bitmap.close();
+    const blob = await new Promise(res => canvas.toBlob(res, 'image/webp', quality));
+    if (!blob || blob.size >= file.size) return file;
+    return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.webp', { type: 'image/webp' });
+  } catch (e) {
+    return file;
+  }
+},
    async uploadToStorage(bucketName, filePath, file) {
+    if (/^(covers|authors)\//.test(filePath)) {
+  file = await this.compressImage(file, filePath.startsWith('covers/') ? 600 : 256);
+  filePath = filePath.replace(/\.[^./]+$/, '') + '.' + file.name.split('.').pop().toLowerCase();
+}
      const fileExtension = file.name.split('.').pop().toLowerCase();
      const contentType = fileExtension === 'pdf' ? 'application/pdf' : file.type || 'application/octet-stream';
      const { error: uploadError } = await this.supabaseClient.storage
        .from(bucketName)
        .upload(filePath, file, {
-         cacheControl: '3600',
+       cacheControl: '31536000',
          upsert: true,
          contentType
        });
@@ -1755,8 +1766,8 @@ function portalEngine() {
        const existingPdfBytes = await response.arrayBuffer();
 
        let pdfBytesToDownload = existingPdfBytes;
-       if (window.PDFLib) {
-         const { PDFDocument, rgb, degrees } = window.PDFLib;
+     {
+  const { PDFDocument, rgb, degrees } = await this.loadPdfLib();
          const pdfDoc = await PDFDocument.load(existingPdfBytes, { ignoreEncryption: true });
          const pages = pdfDoc.getPages();
          const userText = this.currentUser?.email || 'Pembaca Terverifikasi';
@@ -2021,6 +2032,18 @@ function portalEngine() {
 
      speakNextChunk();
    },
+
+   async loadPdfLib() {
+  if (window.PDFLib) return window.PDFLib;
+  await new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.9/dist/pdf-lib.min.js';
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('Gagal memuat modul watermark PDF.'));
+    document.head.appendChild(s);
+  });
+  return window.PDFLib;
+},
 
    stopTTS() {
      this.ttsSessionId++;

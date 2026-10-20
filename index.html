@@ -5,27 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Pustaka WebBook - Portal Interaktif</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📖</text></svg>">
+  <link rel="preconnect" href="https://klumtyeooujhonbrhnzv.supabase.co" crossorigin>
+<link rel="preconnect" href="https://klumtyeooujhonbrhnzv.supabase.co">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
   
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class'
-    }
-  </script>
   <!-- Supabase JS Client -->
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- DOMPurify untuk Proteksi Sanitasi XSS -->
   <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
   <!-- PDF-Lib untuk Stamping Watermark Dinamis -->
-  <script defer src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.9/dist/pdf-lib.min.js"></script>
   <!-- Engine Logika Aplikasi -->
-  <script defer src="script.js?v=2.1"></script>
+  <script defer src="script.js?v=2.2"></script>
   <!-- Alpine.js Collapse Plugin (Wajib dimuat sebelum Alpine Core) -->
   <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
   <!-- Alpine.js -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  
+  <link rel="stylesheet" href="tailwind.css?v=2" />
   <!-- Custom Stylesheet -->
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -262,14 +257,14 @@
 
     <!-- GRID BUKU HASIL FILTER -->
     <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5" x-show="filteredBooks.length > 0">
-      <template x-for="book in filteredBooks" :key="book.id">
+      <template x-for="(book, index) in filteredBooks" :key="book.id">
         <div class="bg-gradient-to-b from-white via-[#faf9f6]/80 to-[#f5f2eb]/70 dark:from-slate-900 dark:to-slate-950 border border-stone-200/90 dark:border-slate-800 rounded-2xl overflow-hidden hover:border-amber-400/80 dark:hover:border-indigo-500/50 hover:shadow-[0_16px_35px_-8px_rgba(120,90,40,0.12)] dark:hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 group flex flex-col justify-between">
           
           <div>
             <!-- Sampul Buku (Cover Image) -->
             <div class="relative h-44 w-full overflow-hidden bg-slate-100 dark:bg-slate-800 cursor-pointer" @click="handleBookClick(book)">
               <template x-if="book.coverUrl">
-                <img :src="book.coverUrl" :alt="book.title" loading="lazy" decoding="async" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out" />
+                <img :loading="index < 2 ? 'eager' : 'lazy'" :fetchpriority="index < 2 ? 'high' : 'auto'" :src="book.coverUrl" :alt="book.title" decoding="async" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out" />
               </template>
               <template x-if="!book.coverUrl">
                 <div class="w-full h-full bg-gradient-to-tr from-indigo-500 to-violet-600 flex items-center justify-center text-white/40">
