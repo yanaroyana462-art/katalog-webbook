@@ -394,55 +394,60 @@ function portalEngine() {
       }
     },
 
-    async loadAuthorProfile() {
-      if (!this.currentUser) return;
-      try {
-        const raw = localStorage.getItem('author_profile_' + this.currentUser.id);
-        let profile = raw ? JSON.parse(raw) : null;
+   async loadAuthorProfile() {
+  if (!this.currentUser) return;
+  try {
+    const raw = localStorage.getItem('author_profile_' + this.currentUser.id);
+    let profile = raw ? JSON.parse(raw) : null;
 
-        if (this.supabaseClient) {
-          const { data, error } = await this.supabaseClient
-            .from('profiles')
-            .select('author, author_bio, author_photo, author_links')
-            .eq('id', this.currentUser.id)
-            .maybeSingle();
+    if (this.supabaseClient) {
+      const { data, error } = await this.supabaseClient
+        .from('profiles')
+        .select('author, author_bio, author_photo, author_links')
+        .eq('id', this.currentUser.id)
+        .maybeSingle();
 
-          if (!error && data) {
-            profile = {
-              author: data.author || '',
-              authorBio: data.author_bio || '',
-              authorPhoto: data.author_photo || '',
-              authorLinks: data.author_links || { instagram: '', x: '', facebook: '', tiktok: '', linkedin: '', whatsapp: '', website: '' }
-            };
-            localStorage.setItem('author_profile_' + this.currentUser.id, JSON.stringify(profile));
+      if (!error && data) {
+        profile = {
+          author: data.author || '',
+          authorBio: data.author_bio || '',
+          authorPhoto: data.author_photo || '',
+          authorLinks: {
+            instagram: data.author_links?.instagram || '',
+            x: data.author_links?.x || '',
+            facebook: data.author_links?.facebook || '',
+            tiktok: data.author_links?.tiktok || '',
+            linkedin: data.author_links?.linkedin || '',
+            whatsapp: data.author_links?.whatsapp || '',
+            website: data.author_links?.website || ''
           }
-        }
-
-        if (!profile && this.catalog && this.catalog.length > 0) {
-          const myLastBook = this.catalog.find(b => b.userId === this.currentUser.id);
-          if (myLastBook) {
-            profile = {
-              author: myLastBook.author || '',
-              authorBio: myLastBook.authorBio || '',
-              authorPhoto: myLastBook.authorPhoto || '',
-              authorLinks: myLastBook.authorLinks || { instagram: '', x: '', facebook: '', tiktok: '', linkedin: '', whatsapp: '', website: '' }
-            };
-            this.saveAuthorProfileLocally(profile);
-          }
-        }
-
-        if (profile) {
-          if (profile.author && !this.uploadForm.author) this.uploadForm.author = profile.author;
-          if (profile.authorBio && !this.uploadForm.authorBio) this.uploadForm.authorBio = profile.authorBio;
-          if (profile.authorPhoto && !this.uploadForm.authorPhoto) this.uploadForm.authorPhoto = profile.authorPhoto;
-          if (profile.authorLinks && !this.hasAuthorLinks(this.uploadForm.authorLinks)) {
-            this.uploadForm.authorLinks = JSON.parse(JSON.stringify(profile.authorLinks));
-          }
-        }
-      } catch (e) {
-        console.warn('Gagal memuat profil penulis:', e);
+        };
+        localStorage.setItem('author_profile_' + this.currentUser.id, JSON.stringify(profile));
       }
-    },
+    }
+
+    if (profile) {
+      if (profile.author) this.uploadForm.author = profile.author;
+      if (profile.authorBio) this.uploadForm.authorBio = profile.authorBio;
+      if (profile.authorPhoto) this.uploadForm.authorPhoto = profile.authorPhoto;
+      
+      // Salin langsung objek authorLinks tanpa syarat hasAuthorLinks yang memblokir
+      if (profile.authorLinks) {
+        this.uploadForm.authorLinks = {
+          instagram: profile.authorLinks.instagram || '',
+          x: profile.authorLinks.x || '',
+          facebook: profile.authorLinks.facebook || '',
+          tiktok: profile.authorLinks.tiktok || '',
+          linkedin: profile.authorLinks.linkedin || '',
+          whatsapp: profile.authorLinks.whatsapp || '',
+          website: profile.authorLinks.website || ''
+        };
+      }
+    }
+  } catch (e) {
+    console.warn('Gagal memuat profil penulis:', e);
+  }
+}
 
     clearAuthorProfileFromForm() {
       this.uploadForm.author = '';
@@ -486,40 +491,50 @@ function portalEngine() {
       }
     },
 
-    async saveProfileModal() {
-      if (!this.profileForm.author.trim()) return;
-      this.isUpdatingProfile = true;
-      try {
-        let uploadedPhoto = this.profileForm.authorPhoto;
-        if (this.supabaseClient && this.profileForm.authorPhotoFile) {
-          const cleanName = this.profileForm.authorPhotoFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-          const photoPath = `authors/${Date.now()}_${cleanName}`;
-          const res = await this.uploadToStorage(SUPABASE_STORAGE_BUCKET, photoPath, this.profileForm.authorPhotoFile);
-          if (res) uploadedPhoto = res;
-        }
-        const updated = {
-          author: this.profileForm.author.trim(),
-          authorBio: this.profileForm.authorBio ? this.profileForm.authorBio.trim() : '',
-          authorPhoto: uploadedPhoto ? uploadedPhoto.trim() : '',
-          authorLinks: this.profileForm.authorLinks || {}
-        };
-        await this.saveAuthorProfileLocally(updated);
+   async saveProfileModal() {
+  if (!this.profileForm.author.trim()) return;
+  this.isUpdatingProfile = true;
+  try {
+    let uploadedPhoto = this.profileForm.authorPhoto;
+    if (this.supabaseClient && this.profileForm.authorPhotoFile) {
+      const cleanName = this.profileForm.authorPhotoFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const photoPath = `authors/${Date.now()}_${cleanName}`;
+      const res = await this.uploadToStorage(SUPABASE_STORAGE_BUCKET, photoPath, this.profileForm.authorPhotoFile);
+      if (res) uploadedPhoto = res;
+    }
 
-       await this.loadAuthorProfile();
+    // Pemetaan eksplisit untuk semua media sosial
+    const updated = {
+      author: this.profileForm.author.trim(),
+      authorBio: this.profileForm.authorBio ? this.profileForm.authorBio.trim() : '',
+      authorPhoto: uploadedPhoto ? uploadedPhoto.trim() : '',
+      authorLinks: {
+        instagram: this.profileForm.authorLinks?.instagram || '',
+        x: this.profileForm.authorLinks?.x || '',
+        facebook: this.profileForm.authorLinks?.facebook || '',
+        tiktok: this.profileForm.authorLinks?.tiktok || '',
+        linkedin: this.profileForm.authorLinks?.linkedin || '',
+        whatsapp: this.profileForm.authorLinks?.whatsapp || '',
+        website: this.profileForm.authorLinks?.website || ''
+      }
+    };
 
-       this.uploadForm.author = updated.author;
-       this.uploadForm.authorBio = updated.authorBio;
-       this.uploadForm.authorPhoto = updated.authorPhoto;
-       this.uploadForm.authorLinks = JSON.parse(JSON.stringify(updated.authorLinks || {}));
+    await this.saveAuthorProfileLocally(updated);
+    await this.loadAuthorProfile();
 
-       this.closeProfileModal();
-       this.showToast('Profil penulis berhasil diperbarui.', 'success');
-     } catch (err) {
-       this.showToast('Gagal menyimpan profil: ' + err.message, 'error');
-     } finally {
-       this.isUpdatingProfile = false;
-     }
-   },
+    this.uploadForm.author = updated.author;
+    this.uploadForm.authorBio = updated.authorBio;
+    this.uploadForm.authorPhoto = updated.authorPhoto;
+    this.uploadForm.authorLinks = { ...updated.authorLinks };
+
+    this.closeProfileModal();
+    this.showToast('Profil penulis berhasil diperbarui.', 'success');
+  } catch (err) {
+    this.showToast('Gagal menyimpan profil: ' + err.message, 'error');
+  } finally {
+    this.isUpdatingProfile = false;
+  }
+}
 
    // Form Upload State
    isDragging: false,
