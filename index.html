@@ -2153,5 +2153,42 @@
       </div>
     </div>
   </div>
+  <!-- Tombol & Modal Beri Akses (khusus admin) -->
+<button x-show="isAdmin" style="display:none" @click="openGrantModal()"
+  class="fixed bottom-4 left-4 z-40 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-lg hover:bg-emerald-700">
+  🔑 Beri Akses
+</button>
+
+<div x-show="isGrantModalOpen && isAdmin" style="display:none"
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+  @click.self="closeGrantModal()" @keydown.escape.window="closeGrantModal()">
+  <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-800">
+    <h3 class="text-lg font-bold text-slate-900 dark:text-white">Beri Akses Buku Berbayar</h3>
+    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Isi setelah pembayaran pembeli Anda verifikasi.</p>
+
+    <label class="mt-4 block text-sm font-medium text-slate-700 dark:text-slate-200">Email pembeli</label>
+    <input type="email" x-model="grantEmail" placeholder="email.pembeli@gmail.com"
+      class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-700 dark:text-white">
+
+    <label class="mt-4 block text-sm font-medium text-slate-700 dark:text-slate-200">Buku yang dibeli</label>
+    <select x-model="grantBookId"
+      class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-700 dark:text-white">
+      <option value="">-- Pilih buku berbayar --</option>
+      <template x-for="b in paidBooks" :key="b.id">
+        <option :value="b.id" x-text="b.title"></option>
+      </template>
+    </select>
+
+    <p x-show="grantResult" x-text="grantResult" style="display:none"
+      class="mt-4 rounded-lg bg-slate-100 p-3 text-sm text-slate-800 dark:bg-slate-700 dark:text-slate-100"></p>
+
+    <div class="mt-5 flex justify-end gap-2">
+      <button @click="closeGrantModal()" class="rounded-lg px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700">Tutup</button>
+      <button @click="grantAccess()" :disabled="isGranting"
+        class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+        x-text="isGranting ? 'Memproses...' : 'Beri Akses'"></button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

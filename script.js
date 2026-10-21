@@ -8,6 +8,11 @@ const ADMIN_EMAIL = 'yanaroyana462@gmail.com';
 function portalEngine() {
   return {
     currentView: 'catalog', // 'catalog' | 'upload'
+    isGrantModalOpen: false,
+    isGranting: false,
+    grantEmail: '',
+    grantBookId: '',
+    grantResult: '',
     
     // Auth State
     currentUser: null,
@@ -169,7 +174,7 @@ function portalEngine() {
         this.readerFontSize = parseInt(savedSize, 10) || 16;
       }
 
-      const savedPurchases = localStorage.getItem('purchasedBookIds');
+      const savedPurchases = null; localStorage.removeItem('purchasedBookIds');
       if (savedPurchases) {
         try {
           this.purchasedBookIds = JSON.parse(savedPurchases);
@@ -290,8 +295,8 @@ function portalEngine() {
           .eq('user_id', this.currentUser.id);
         if (!error && data && data.length > 0) {
           const remoteIds = data.map(row => String(row.book_id));
-          this.purchasedBookIds = [...new Set([...this.purchasedBookIds, ...remoteIds])];
-          localStorage.setItem('purchasedBookIds', JSON.stringify(this.purchasedBookIds));
+          this.purchasedBookIds = remoteIds;
+          // status pembelian tidak lagi disimpan di browser
         }
       } catch (err) {
         console.error('Gagal mengambil riwayat pembelian akun:', err);
@@ -1679,6 +1684,54 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
        this.showToast('Gagal memperbarui buku: ' + err.message, 'error');
      } finally {
        this.isUpdatingBook = false;
+     }
+   },
+
+   get paidBooks() {
+     return this.catalog.filter(b => b.accessType === 'Berbayar');
+   },
+
+   openGrantModal() {
+     this.grantEmail = '';
+     this.grantBookId = '';
+     this.grantResult = '';
+     this.isGrantModalOpen = true;
+   },
+
+   closeGrantModal() {
+     if (this.isGranting) return;
+     this.isGrantModalOpen = false;
+   },
+
+   async grantAccess() {
+     if (!this.isAdmin || !this.supabaseClient) return;
+     const email = this.grantEmail.trim().toLowerCase();
+     const bookId = Number(this.grantBookId);
+     if (!email || !bookId) {
+       this.grantResult = '❌ Isi email pembeli dan pilih bukunya dulu.';
+       return;
+     }
+     this.isGranting = true;
+     this.grantResult = '';
+     try {
+       const { data, error } = await this.supabaseClient.rpc('grant_book_access', { p_email: email, p_book_id: bookId });
+       if (error) throw error;
+       const book = this.catalog.find(b => String(b.id) === String(bookId));
+       const title = book ? book.title : 'buku';
+       if (data === 'OK') {
+         this.grantResult = `✅ Akses "${title}" sudah diberikan ke ${email}.`;
+         this.grantEmail = '';
+       } else if (data === 'ALREADY') {
+         this.grantResult = `ℹ️ ${email} sudah punya akses ke "${title}".`;
+       } else if (data === 'EMAIL_NOT_FOUND') {
+         this.grantResult = `❌ Email ${email} belum terdaftar. Minta pembeli daftar dulu di Pustaka WebBook.`;
+       } else {
+         this.grantResult = '⚠️ Respon tidak dikenal: ' + data;
+       }
+     } catch (err) {
+       this.grantResult = '❌ Gagal: ' + (err.message || err);
+     } finally {
+       this.isGranting = false;
      }
    },
 
