@@ -43,7 +43,7 @@ new = '''<!-- Tombol & Modal Beri Akses (khusus admin) -->
 s = s[:start] + new + s[end:]
 
 # naikkan versi script supaya browser memuat yang baru
-assert s.count('script.js?v=2.3') == 1, 'baris script.js tidak ketemu'
+assert s.count('script.js?v=2.4') == 1, 'baris script.js tidak ketemu'
 s = s.replace('script.js?v=2.3', 'script.js?v=2.4')
 
 # rapikan komentar HTML yang tidak tertutup di modal donasi (tidak berbahaya)
