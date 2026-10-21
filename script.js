@@ -1236,6 +1236,7 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
    },
 
    getReportBookUrl(book) {
+     if (!book) return '#'; // Pengaman agar tidak error jika activeBook null
      const message = `Halo Admin, saya ingin melaporkan buku berikut:\nJudul: ${book.title}\nPenulis: ${book.author}\nTautan: ${this.getShareBookLink(book)}\n\nAlasan laporan: `;
      return `https://wa.me/${this.adminWaNumber}?text=${encodeURIComponent(message)}`;
    },
