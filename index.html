@@ -66,6 +66,12 @@
       </div>
 
       <div class="flex items-center gap-2">
+                <!-- Tombol Donasi -->
+        <button @click="openDonateModal()" type="button"
+                class="px-2.5 sm:px-3 py-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-300 border border-rose-200 dark:border-rose-900/60 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
+          <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          <span class="hidden sm:inline">Donasi</span>
+        </button>
         <!-- Tombol Toggle Dark / Light Mode -->
         <button @click="toggleDarkMode()" type="button" 
                 class="p-2 rounded-lg text-stone-500 hover:text-stone-800 hover:bg-stone-200/60 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800 transition" 
@@ -363,6 +369,12 @@
           </button>
         </template>
       </div>
+    </div>
+        <div class="mt-10 text-center">
+      <button @click="openDonateModal()" type="button"
+              class="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-300 border border-rose-200 dark:border-rose-900/60 rounded-xl text-xs font-semibold transition">
+        ❤️ Dukung Pustaka WebBook dengan Donasi
+      </button>
     </div>
 <template x-if="isAdmin">
       <div class="mt-12 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -2058,6 +2070,87 @@
 
     </div>
   </div>
+  <!-- ========================================== -->
+  <!-- MODAL DONASI                               -->
+  <!-- ========================================== -->
+  <div x-show="isDonateModalOpen" x-cloak
+       @keydown.escape.window="closeDonateModal()"
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+       x-transition:enter="transition ease-out duration-200"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-150"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0">
 
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6 shadow-2xl relative"
+         @click.outside="closeDonateModal()"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100">
+
+      <!-- Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div>
+          <h3 class="text-base font-bold text-slate-900 dark:text-white">Dukung Pustaka WebBook</h3>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">Donasi Anda membantu pengembangan dan perawatan portal ini.</p>
+        </div>
+        <button @click="closeDonateModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg" aria-label="Tutup">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <!-- Kartu Rekening DANA -->
+      <div class="mt-4 p-4 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-md">
+        <div class="flex items-center justify-between">
+          <span class="text-[11px] font-bold tracking-widest uppercase opacity-90" x-text="donateAccount.provider"></span>
+          <span class="text-[10px] px-2 py-0.5 rounded-full bg-white/20 font-semibold">E-Wallet</span>
+        </div>
+        <p class="mt-3 text-xl font-mono font-bold tracking-wider" x-text="donateAccount.number"></p>
+        <p class="text-xs mt-1 opacity-90" x-text="`a.n. ${donateAccount.name}`"></p>
+        <button type="button" @click="copyDonateNumber()"
+                class="mt-3 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-xs font-semibold transition flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V5a2 2 0 012-2h9a2 2 0 012 2v12a2 2 0 01-2 2h-2M5 7h9a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2z"></path></svg>
+          <span x-text="isDonateAccountCopied ? 'Nomor tersalin!' : 'Salin nomor'"></span>
+        </button>
+      </div>
+
+      <!-- Pilihan Nominal -->
+      <div class="mt-4">
+        <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">Pilih atau isi nominal donasi</label>
+        <div class="grid grid-cols-4 gap-2">
+          <template x-for="preset in donatePresets" :key="preset">
+            <button type="button" @click="donateAmount = preset"
+                    class="py-2 rounded-lg text-[11px] font-semibold border transition"
+                    :class="donateAmount === preset
+                      ? 'bg-indigo-600 border-indigo-600 text-white'
+                      : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700'"
+                    x-text="`${preset / 1000}rb`"></button>
+          </template>
+        </div>
+        <input type="number" min="0" step="1000" x-model.number="donateAmount" placeholder="Nominal lain (Rp)"
+               class="mt-2 w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2 text-xs md:text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition" />
+        <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400" x-show="donateAmount > 0" x-text="`Total: ${formatCurrency(donateAmount)}`"></p>
+      </div>
+
+      <!-- Info Konfirmasi -->
+      <div class="mt-4 p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 rounded-xl text-xs text-emerald-800 dark:text-emerald-300 leading-relaxed">
+        Setelah transfer via DANA, tekan tombol di bawah untuk mengirim konfirmasi dan bukti transfer lewat WhatsApp.
+      </div>
+
+      <!-- Tombol Aksi -->
+      <div class="mt-5 flex gap-2">
+        <button type="button" @click="closeDonateModal()"
+                class="w-1/3 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition">
+          Tutup
+        </button>
+        <button type="button" @click="confirmDonation()"
+                class="w-2/3 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-emerald-600/30 transition flex items-center justify-center gap-2">
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.694.072-2.073-.501-1.637-.68-2.686-2.347-2.766-2.455-.08-.108-.663-.881-.663-1.681 0-.8.419-1.194.568-1.356.149-.162.325-.203.433-.203.11 0 .219.002.315.006.102.005.239-.039.373.284.14.336.477 1.166.518 1.251.042.085.07.185.012.3-.058.115-.088.187-.174.288-.087.102-.183.227-.262.305-.088.087-.18.182-.078.358.102.175.454.748.974 1.212.668.596 1.232.781 1.408.868.175.086.279.073.382-.045.103-.118.441-.513.56-.688.118-.175.237-.146.398-.086.161.06 1.023.482 1.198.57.175.087.292.13.335.203.044.074.044.43-.1.835z"/></svg>
+          <span>Konfirmasi via WhatsApp</span>
+        </button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

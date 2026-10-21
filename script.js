@@ -77,7 +77,16 @@ function portalEngine() {
       { id: 'cc', name: 'Kartu Kredit / Debit', desc: 'Visa, Mastercard, JCB', badge: 'Aman' }
     ],
     purchasedBookIds: [],
-
+    // State Modal Donasi
+    isDonateModalOpen: false,
+    donateAmount: 0,
+    isDonateAccountCopied: false,
+    donateAccount: {
+      provider: 'DANA',
+      name: 'Yana Royana',
+      number: '085794506290'
+    },
+    donatePresets: [10000, 25000, 50000, 100000],
     // State Modal Bagikan Buku
     isShareModalOpen: false,
     shareBookData: null,
@@ -1912,7 +1921,42 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
      if (!amount || isNaN(amount)) return 'Rp 0';
      return 'Rp ' + Number(amount).toLocaleString('id-ID');
    },
+   openDonateModal() {
+     this.donateAmount = 0;
+     this.isDonateAccountCopied = false;
+     this.isDonateModalOpen = true;
+   },
 
+   closeDonateModal() {
+     this.isDonateModalOpen = false;
+   },
+
+   async copyDonateNumber() {
+     const number = this.donateAccount.number;
+     try {
+       await navigator.clipboard.writeText(number);
+     } catch (e) {
+       const temp = document.createElement('input');
+       temp.value = number;
+       document.body.appendChild(temp);
+       temp.select();
+       document.execCommand('copy');
+       document.body.removeChild(temp);
+     }
+     this.isDonateAccountCopied = true;
+     setTimeout(() => { this.isDonateAccountCopied = false; }, 2500);
+   },
+
+   confirmDonation() {
+     const nominal = Number(this.donateAmount) > 0
+       ? this.formatCurrency(this.donateAmount)
+       : '(sebutkan nominal)';
+     const userEmail = this.currentUser?.email || 'Tamu / Belum Login';
+     const waText = `Halo Yana Royana,\n\nSaya sudah melakukan donasi untuk Pustaka WebBook:\n💰 *Nominal*: ${nominal}\n💳 *Via*: DANA ke ${this.donateAccount.number} a.n. ${this.donateAccount.name}\n👤 *Akun*: ${userEmail}\n\nBerikut saya lampirkan bukti transfernya. Terima kasih!`;
+     window.open(`https://wa.me/${this.donateAccount.number.replace(/^0/, '62')}?text=${encodeURIComponent(waText)}`, '_blank', 'noopener,noreferrer');
+     this.closeDonateModal();
+     this.showToast('Terima kasih atas dukungan Anda! Silakan kirim bukti transfer via WhatsApp.', 'success');
+   },
    increaseFontSize() {
      if (this.readerFontSize < 24) {
        this.readerFontSize += 2;
