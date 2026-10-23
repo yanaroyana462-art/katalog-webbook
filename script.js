@@ -82,6 +82,17 @@ function portalEngine() {
       { id: 'cc', name: 'Kartu Kredit / Debit', desc: 'Visa, Mastercard, JCB', badge: 'Aman' }
     ],
     purchasedBookIds: [],
+    // State Halaman Informasi & Kebijakan (footer)
+    isLegalModalOpen: false,
+    legalPage: 'about', // 'about' | 'privacy' | 'terms' | 'copyright'
+    adminEmail: ADMIN_EMAIL,
+    legalTabs: { about: 'Tentang', privacy: 'Privasi', terms: 'Syarat', copyright: 'Hak Cipta' },
+    legalTitles: {
+      about: 'Tentang & Cara Kerja',
+      privacy: 'Kebijakan Privasi',
+      terms: 'Syarat & Ketentuan',
+      copyright: 'Kebijakan Hak Cipta'
+    },
     // State Modal Donasi
     isDonateModalOpen: false,
     donateAmount: 0,
@@ -1975,6 +1986,16 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
      if (!amount || isNaN(amount)) return 'Rp 0';
      return 'Rp ' + Number(amount).toLocaleString('id-ID');
    },
+   openLegal(page = 'about') {
+     this.legalPage = page;
+     this.isLegalModalOpen = true;
+     this.$nextTick(() => { if (this.$refs.legalBody) this.$refs.legalBody.scrollTop = 0; });
+   },
+
+   closeLegal() {
+     this.isLegalModalOpen = false;
+   },
+
    openDonateModal() {
      this.donateAmount = 0;
      this.isDonateAccountCopied = false;

@@ -2089,7 +2089,7 @@
          x-transition:enter-start="opacity-0 scale-95"
          x-transition:enter-end="opacity-100 scale-100">
 
-      <!-- Header --
+      <!-- Header -->
   <!-- Kartu Rekening DANA -->
   <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
     <div>
@@ -2154,38 +2154,35 @@
     </div>
   </div>
   <!-- Tombol & Modal Beri Akses (khusus admin) -->
-<button x-show="isAdmin" style="display:none" @click="openGrantModal()"
-  class="fixed bottom-4 left-4 z-40 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-lg hover:bg-emerald-700">
-  🔑 Beri Akses
-</button>
+<button x-show="isAdmin" style="display:none;position:fixed;left:16px;bottom:16px;z-index:60;background:#059669;color:#fff;border:0;border-radius:9999px;padding:10px 16px;font-size:13px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.3);cursor:pointer"
+  @click="openGrantModal()">🔑 Beri Akses</button>
 
-<div x-show="isGrantModalOpen && isAdmin" style="display:none"
-  class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+<div x-show="isGrantModalOpen && isAdmin" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.55);align-items:center;justify-content:center;padding:16px"
+  :style="isGrantModalOpen && isAdmin ? 'display:flex' : 'display:none'"
   @click.self="closeGrantModal()" @keydown.escape.window="closeGrantModal()">
-  <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-800">
-    <h3 class="text-lg font-bold text-slate-900 dark:text-white">Beri Akses Buku Berbayar</h3>
-    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Isi setelah pembayaran pembeli Anda verifikasi.</p>
+  <div style="width:100%;max-width:420px;background:#fff;color:#0f172a;border-radius:16px;padding:24px;box-shadow:0 20px 50px rgba(0,0,0,.35)">
+    <h3 style="margin:0;font-size:18px;font-weight:700">Beri Akses Buku Berbayar</h3>
+    <p style="margin:4px 0 0;font-size:13px;color:#64748b">Isi setelah pembayaran pembeli Anda verifikasi.</p>
 
-    <label class="mt-4 block text-sm font-medium text-slate-700 dark:text-slate-200">Email pembeli</label>
+    <label style="display:block;margin-top:16px;font-size:13px;font-weight:600">Email pembeli</label>
     <input type="email" x-model="grantEmail" placeholder="email.pembeli@gmail.com"
-      class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-700 dark:text-white">
+      style="margin-top:4px;width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;font-size:14px;background:#fff;color:#0f172a">
 
-    <label class="mt-4 block text-sm font-medium text-slate-700 dark:text-slate-200">Buku yang dibeli</label>
+    <label style="display:block;margin-top:16px;font-size:13px;font-weight:600">Buku yang dibeli</label>
     <select x-model="grantBookId"
-      class="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-700 dark:text-white">
+      style="margin-top:4px;width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:8px;padding:8px 12px;font-size:14px;background:#fff;color:#0f172a">
       <option value="">-- Pilih buku berbayar --</option>
       <template x-for="b in paidBooks" :key="b.id">
         <option :value="b.id" x-text="b.title"></option>
       </template>
     </select>
 
-    <p x-show="grantResult" x-text="grantResult" style="display:none"
-      class="mt-4 rounded-lg bg-slate-100 p-3 text-sm text-slate-800 dark:bg-slate-700 dark:text-slate-100"></p>
+    <p x-show="grantResult" x-text="grantResult" style="display:none;margin:16px 0 0;background:#f1f5f9;border-radius:8px;padding:12px;font-size:13px"></p>
 
-    <div class="mt-5 flex justify-end gap-2">
-      <button @click="closeGrantModal()" class="rounded-lg px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700">Tutup</button>
+    <div style="margin-top:20px;display:flex;justify-content:flex-end;gap:8px">
+      <button @click="closeGrantModal()" style="border:0;background:#f1f5f9;color:#475569;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer">Tutup</button>
       <button @click="grantAccess()" :disabled="isGranting"
-        class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+        style="border:0;background:#059669;color:#fff;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer"
         x-text="isGranting ? 'Memproses...' : 'Beri Akses'"></button>
     </div>
   </div>
