@@ -53,6 +53,11 @@ function portalEngine() {
 
     // State Modal Edit Profil Saya
     isProfileModalOpen: false,
+        // State Dasbor Penulis
+    isDashboardOpen: false,
+    dashboardLoading: false,
+    dashboardError: '',
+    dashboardData: null,
     isUpdatingProfile: false,
     profileForm: {
       author: '',
@@ -1790,8 +1795,9 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
        return;
      }
 
-     this.currentChapterIndex = chapterIndex;
+          this.currentChapterIndex = chapterIndex;
      this.readerTab = 'text';
+     this.trackCurrentChapter();
      window.scrollTo({ top: 0, behavior: 'smooth' });
    },
 
@@ -1894,6 +1900,7 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
    async openBook(book) {
      this.stopTTS();
      this.activeBook = { ...book, chapters: book.chapters ? [...book.chapters] : [] };
+          this.trackEvent('book_open', book);
      this.activeBookSignedUrl = '';
      this.currentChapterIndex = 0;
      this.isEmbedFullscreen = false;
@@ -1986,6 +1993,97 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
      if (!amount || isNaN(amount)) return 'Rp 0';
      return 'Rp ' + Number(amount).toLocaleString('id-ID');
    },
+      // ===== Pencatatan pembaca =====
+   getReaderSessionId() {
+     try {
+       let id = localStorage.getItem('wb_sid');
+       if (!id) {
+         id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2);
+         localStorage.setItem('wb_sid', id);
+       }
+       return id;
+     } catch (e) {
+       return 'anon-' + Math.random().toString(36).slice(2);
+     }
+   },
+
+   async trackEvent(type, book, chapterTitle = null) {
+     if (!this.supabaseClient || !book) return;
+     // Pembacaan oleh penulis sendiri tidak dihitung
+     if (this.currentUser && book.userId === this.currentUser.id) return;
+     const bookId = Number(book.id);
+     if (!Number.isFinite(bookId)) return;
+
+     // Hindari hitungan ganda: 1 kejadian yang sama per 30 menit per browser
+     const key = `wb_ev_${type}_${bookId}_${chapterTitle || ''}`;
+     try {
+       const last = Number(sessionStorage.getItem(key) || 0);
+       if (Date.now() - last < 30 * 60 * 1000) return;
+       sessionStorage.setItem(key, String(Date.now()));
+     } catch (e) {}
+
+     try {
+       await this.supabaseClient.from('reading_events').insert({
+         book_id: bookId,
+         chapter_title: chapterTitle,
+         session_id: this.getReaderSessionId(),
+         event_type: type,
+         user_id: this.currentUser?.id || null
+       });
+     } catch (e) {
+       console.warn('Gagal mencatat kunjungan:', e);
+     }
+   },
+
+   trackCurrentChapter() {
+     const ch = this.activeBook?.chapters?.[this.currentChapterIndex];
+     if (!ch || this.readerTab !== 'text') return;
+     if ((ch.content || '').includes('Bab ini terkunci')) return; // bab terkunci tidak dihitung
+     this.trackEvent('chapter_read', this.activeBook, this.getChapterDisplayTitle(ch));
+   },
+
+   // ===== Dasbor Penulis =====
+   async openDashboard() {
+     this.isDashboardOpen = true;
+     await this.loadDashboard();
+   },
+
+   closeDashboard() {
+     this.isDashboardOpen = false;
+   },
+
+   async loadDashboard() {
+     if (!this.supabaseClient || !this.currentUser) return;
+     this.dashboardLoading = true;
+     this.dashboardError = '';
+     try {
+       const { data, error } = await this.supabaseClient.rpc('author_dashboard_stats');
+       if (error) throw error;
+       this.dashboardData = data || { books: [] };
+     } catch (err) {
+       this.dashboardError = 'Gagal memuat statistik: ' + (err.message || err);
+     } finally {
+       this.dashboardLoading = false;
+     }
+   },
+
+   get dashboardTotals() {
+     const books = this.dashboardData?.books || [];
+     return {
+       books: books.length,
+       readers: books.reduce((s, b) => s + (b.readers || 0), 0),
+       purchases: books.reduce((s, b) => s + (b.purchases || 0), 0)
+     };
+   },
+
+   get dashboardTopChapter() {
+     let best = null;
+     (this.dashboardData?.books || []).forEach(b => {
+       const top = b.top_chapters?.[0];
+       if (top && (!best || top.reads > best.reads)) best = { title: top.title, reads: top.reads, book: b.title };
+     });
+     return best;
+   },
    openLegal(page = 'about') {
      this.legalPage = page;
      this.isLegalModalOpen = true;
@@ -2062,6 +2160,7 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
        }
        this.stopTTS();
        this.currentChapterIndex++;
+       this.trackCurrentChapter();
        window.scrollTo({ top: 0, behavior: 'smooth' });
      }
    },
@@ -2070,6 +2169,7 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
      if (this.currentChapterIndex > 0) {
        this.stopTTS();
        this.currentChapterIndex--;
+       this.trackCurrentChapter();
        window.scrollTo({ top: 0, behavior: 'smooth' });
      }
    },
