@@ -887,13 +887,13 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
      if (this.uploadForm.foreword && this.uploadForm.foreword.trim()) {
        preliminaryChapters.push({
          title: 'Kata Pengantar',
-         content: `<p>${this.uploadForm.foreword.trim().replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p>`
+         content: this.plainTextToHtml(this.uploadForm.foreword)
        });
      }
      if (this.uploadForm.introduction && this.uploadForm.introduction.trim()) {
        preliminaryChapters.push({
          title: 'Pendahuluan',
-         content: `<p>${this.uploadForm.introduction.trim().replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p>`
+         content: this.plainTextToHtml(this.uploadForm.introduction)
        });
      }
 
@@ -911,13 +911,13 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
      if (this.uploadForm.glossary && this.uploadForm.glossary.trim()) {
        concludingChapters.push({
          title: 'Glosarium',
-         content: `<p>${this.uploadForm.glossary.trim().replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p>`
+         content: this.plainTextToHtml(this.uploadForm.glossary)
        });
      }
      if (this.uploadForm.bibliography && this.uploadForm.bibliography.trim()) {
        concludingChapters.push({
          title: 'Daftar Pustaka',
-         content: `<p>${this.uploadForm.bibliography.trim().replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p>`
+         content: this.plainTextToHtml(this.uploadForm.bibliography)
        });
      }
 
@@ -1283,7 +1283,7 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
      if (!t) return '';
      const hasInlineTags = /<[a-z][\s\S]*>/i.test(t);
      // Teks dari Word biasanya hanya satu \n antar paragraf: tiap baris = paragraf
-     const paras = /\n\s*\n/.test(t) ? t.split(/\n\s*\n/) : t.split('\n');
+     const paras = t.split(/\n+/);
      return paras
        .map(p => p.trim())
        .filter(Boolean)
