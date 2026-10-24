@@ -1217,7 +1217,7 @@
               </button>
             </template>
             <button @click="if (activeBook?.fileUrl || activeBook?.file_url) { readerTab = 'document'; stopTTS(); loadSignedUrlForActiveBook(); } else if (activeBook?.external_link) { readerTab = 'external'; stopTTS(); } else { startReading(0); }" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs md:text-sm font-semibold shadow-md shadow-indigo-600/30 transition flex items-center justify-center gap-2 text-center">
-              <span x-text="activeBook?.accessType === 'Berbayar' && !purchasedBookIds.includes(activeBook?.id) ? 'Baca Pratinjau (Bab 1)' : 'Mulai Baca Bab 1'"></span>
+              <span x-text="activeBook?.accessType === 'Berbayar' && !purchasedBookIds.includes(activeBook?.id) ? 'Baca Pratinjau' : 'Mulai Membaca'"></span>
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
             </button>
             <button @click="shareBook(activeBook)" class="px-4 py-2.5 bg-stone-100 hover:bg-stone-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-200 rounded-xl text-xs md:text-sm font-semibold border border-stone-200 dark:border-slate-700 transition flex items-center justify-center gap-2 text-center" title="Bagikan Buku">
@@ -1511,7 +1511,7 @@
               <div class="flex items-start gap-2 min-w-0">
                 <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] flex-shrink-0"
                       :class="readerTab === 'text' && currentChapterIndex === idx ? 'bg-indigo-600 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'"
-                      x-text="isSubchapter(chapter) ? getChapterSubchapter(chapter).subchapterIndex : getChapterLabel(chapter, idx).replace('Bab ', '')"></span>
+                      x-text="getChapterBadge(chapter, idx)"></span>
                     <span class="truncate leading-5" :class="isSubchapter(chapter) ? 'pl-2 text-[11px]' : ''" x-text="`${getChapterLabel(chapter, idx)}: ${getChapterDisplayTitle(chapter)}`"></span>
               </div>
               <span x-show="activeBook?.accessType === 'Berbayar' && !purchasedBookIds.includes(activeBook?.id) && idx > 0" class="text-amber-500 flex-shrink-0">

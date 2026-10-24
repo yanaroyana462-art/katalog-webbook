@@ -646,12 +646,38 @@ function portalEngine() {
      return this.getChapterSubchapter(chapter)?.title || chapter?.title || '';
    },
 
+   // Judul yang berasal dari kolom Pembuka/Penutup, bukan bab bernomor
+   isFrontBackMatter(chapter) {
+     const t = (this.getChapterDisplayTitle(chapter) || '').trim();
+     return /^(kata pengantar|prakata|pendahuluan|glosarium|daftar pustaka)$/i.test(t);
+   },
+
+   getMatterLabel(chapter) {
+     const t = (this.getChapterDisplayTitle(chapter) || '').trim();
+     return /^(glosarium|daftar pustaka)$/i.test(t) ? 'Penutup' : 'Pembuka';
+   },
+
    getChapterLabel(chapter, index) {
-     const subchapter = this.getChapterSubchapter(chapter);
-     const chapterNumber = this.activeBook?.chapters
-       ? this.activeBook.chapters.slice(0, index + 1).filter(item => !this.isSubchapter(item)).length
-       : index + 1;
-     return subchapter ? `Subbab ${subchapter.parentIndex}.${subchapter.subchapterIndex}` : `Bab ${chapterNumber}`;
+     const chapters = this.activeBook?.chapters;
+     if (!chapters) return `Bab ${index + 1}`;
+     const sub = this.getChapterSubchapter(chapter);
+     if (sub) {
+       // parentIndex tersimpan sebagai posisi di daftar utama; ubah ke nomor Bab sesungguhnya
+       const mains = chapters.filter(c => !this.isSubchapter(c));
+       const num = mains.slice(0, sub.parentIndex).filter(c => !this.isFrontBackMatter(c)).length;
+       return `Subbab ${num || sub.parentIndex}.${sub.subchapterIndex}`;
+     }
+     if (this.isFrontBackMatter(chapter)) return this.getMatterLabel(chapter);
+     const n = chapters
+       .slice(0, index + 1)
+       .filter(c => !this.isSubchapter(c) && !this.isFrontBackMatter(c)).length;
+     return `Bab ${n}`;
+   },
+
+   getChapterBadge(chapter, index) {
+     if (this.isSubchapter(chapter)) return this.getChapterSubchapter(chapter).subchapterIndex;
+     if (this.isFrontBackMatter(chapter)) return '•';
+     return this.getChapterLabel(chapter, index).replace('Bab ', '');
    },
 
    prepareChaptersForEditing(chapters) {
