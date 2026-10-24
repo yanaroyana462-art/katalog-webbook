@@ -176,6 +176,7 @@ function portalEngine() {
     categories: ['Semua', 'Teknologi & AI', 'Edukasi & Parenting', 'Bisnis & SOP', 'Agama & Pemikiran'],
 
     init() {
+      if (new URLSearchParams(window.location.search).get('aksi') === 'unggah') this.currentView = 'upload';
       const savedTheme = localStorage.getItem('theme');
       if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         this.darkMode = true;

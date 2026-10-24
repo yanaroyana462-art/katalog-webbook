@@ -742,6 +742,7 @@ function portalEngine() {
        this.uploadForm.title = cleanName.replace(/[-_]/g, ' ');
      }
 
+     if (file.name.split('.').pop().toLowerCase() === 'docx') this.importDocx(file);
      const textExtensions = ['txt', 'md', 'markdown', 'html', 'json'];
      const fileExtLower = file.name.split('.').pop().toLowerCase();
      if (textExtensions.includes(fileExtLower)) {
@@ -749,7 +750,7 @@ function portalEngine() {
        reader.onload = (e) => {
          const text = e.target.result;
          if (this.uploadForm.chapters.length > 0 && !this.uploadForm.chapters[0].content) {
-           this.uploadForm.chapters[0].content = `<p>${text.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p>`;
+           this.uploadForm.chapters[0].content = this.normalizeChapterContent(text);
          }
        };
        reader.readAsText(file);
@@ -900,7 +901,7 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
        .filter(chap => chap.title.trim() || chap.content.trim() || chap.subchapters?.some(subchap => subchap.title.trim() || subchap.content.trim()))
        .map((chap, idx) => ({
          title: chap.title.trim() || `Bab ${idx + 1}: ${this.uploadForm.title.trim() || 'Materi'}`,
-         content: chap.content.trim() || (idx === 0 
+         content: this.normalizeChapterContent(chap.content.trim()) || (idx === 0 
            ? `<p>${this.uploadForm.blurb.trim()}</p><p class="text-xs text-slate-500 mt-4 italic">Dokumen terlampir: ${this.uploadForm.fileName || 'Tidak ada file fisik'}</p>`
            : '<p class="text-slate-400 italic">Konten bab ini belum tersedia.</p>'),
          subchapters: chap.subchapters || []
@@ -928,7 +929,7 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
            .filter(subchapter => subchapter.title.trim() || subchapter.content.trim())
            .map((subchapter, subIndex) => ({
              title: `[subbab:${parentIndex}.${subIndex + 1}] ${subchapter.title.trim() || `Subbab ${parentIndex}.${subIndex + 1}`}`,
-             content: subchapter.content.trim() || '<p class="text-slate-400 italic">Konten subbab ini belum tersedia.</p>'
+             content: this.normalizeChapterContent(subchapter.content.trim()) || '<p class="text-slate-400 italic">Konten subbab ini belum tersedia.</p>'
            }))
        ];
      });
@@ -1268,7 +1269,121 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
        .join('');
    },
 
+   // ===== Normalisasi konten bab (teks Word -> paragraf) =====
+   hasBlockHtml(s) {
+     return /<\s*(p|h[1-6]|ul|ol|li|table|blockquote|div|section|pre|br)\b/i.test(s);
+   },
+
+   escapeHtml(s) {
+     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+   },
+
+   plainTextToHtml(text) {
+     const t = String(text).replace(/\r\n?/g, '\n').trim();
+     if (!t) return '';
+     const hasInlineTags = /<[a-z][\s\S]*>/i.test(t);
+     // Teks dari Word biasanya hanya satu \n antar paragraf: tiap baris = paragraf
+     const paras = /\n\s*\n/.test(t) ? t.split(/\n\s*\n/) : t.split('\n');
+     return paras
+       .map(p => p.trim())
+       .filter(Boolean)
+       .map(p => {
+         const body = hasInlineTags ? p : this.escapeHtml(p);
+         return `<p>${body.replace(/\n/g, '<br>')}</p>`;
+       })
+       .join('');
+   },
+
+   normalizeChapterContent(raw) {
+     if (!raw || !String(raw).trim()) return raw || '';
+     return this.hasBlockHtml(raw) ? raw : this.plainTextToHtml(raw);
+   },
+
+   // ===== Pembersih paste dari Word =====
+   cleanPastedHtml(html) {
+     const doc = new DOMParser().parseFromString(html, 'text/html');
+     doc.querySelectorAll('style,script,meta,link,xml').forEach(n => n.remove());
+     const allowed = new Set(['P','H1','H2','H3','H4','UL','OL','LI','B','STRONG','I','EM','U','BR','TABLE','THEAD','TBODY','TR','TH','TD','BLOCKQUOTE','A','SUB','SUP']);
+     const walk = (node) => {
+       let out = '';
+       node.childNodes.forEach(c => {
+         if (c.nodeType === 3) {
+           out += this.escapeHtml(c.nodeValue.replace(/\s+/g, ' '));
+         } else if (c.nodeType === 1) {
+           const tag = c.tagName;
+           const inner = walk(c);
+           if (!allowed.has(tag)) { out += inner; return; }
+           const t = tag.toLowerCase();
+           if (tag === 'BR') {
+             out += '<br>';
+           } else if (tag === 'A') {
+             const h = c.getAttribute('href') || '';
+             out += /^https?:/i.test(h)
+               ? `<a href="${h.replace(/"/g, '&quot;')}" target="_blank" rel="noopener noreferrer">${inner}</a>`
+               : inner;
+           } else {
+             out += `<${t}>${inner}</${t}>`;
+           }
+         }
+       });
+       return out;
+     };
+     return walk(doc.body).replace(/<p>\s*<\/p>/g, '');
+   },
+
+   handleContentPaste(e, obj) {
+     const html = e.clipboardData && e.clipboardData.getData('text/html');
+     if (!html) return; // teks polos: biarkan, nanti dinormalisasi saat render/simpan
+     e.preventDefault();
+     const clean = this.cleanPastedHtml(html);
+     const ta = e.target;
+     const s = ta.selectionStart, en = ta.selectionEnd;
+     const cur = obj.content || '';
+     obj.content = cur.slice(0, s) + clean + cur.slice(en);
+   },
+
+   async loadMammoth() {
+     if (window.mammoth) return window.mammoth;
+     await new Promise((resolve, reject) => {
+       const s = document.createElement('script');
+       s.src = 'https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js';
+       s.onload = resolve;
+       s.onerror = () => reject(new Error('Gagal memuat modul pembaca DOCX.'));
+       document.head.appendChild(s);
+     });
+     return window.mammoth;
+   },
+
+   async importDocx(file) {
+     try {
+       this.showToast('Membaca berkas Word...', 'info');
+       const mammoth = await this.loadMammoth();
+       const buf = await file.arrayBuffer();
+       const { value } = await mammoth.convertToHtml({ arrayBuffer: buf });
+       if (!value || !value.trim()) return;
+
+       const untouched = this.uploadForm.chapters.every(c => !(c.title || '').trim() && !(c.content || '').trim());
+       const parts = value.split(/(?=<h1[^>]*>)/i).filter(s => s.trim());
+
+       if (untouched && /<h1/i.test(value) && parts.length > 1) {
+         // Pecah otomatis per Heading 1 menjadi bab-bab terpisah
+         this.uploadForm.chapters = parts.map(p => {
+           const m = p.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+           const title = m ? m[1].replace(/<[^>]+>/g, '').trim() : '';
+           return { title, content: p.replace(/<h1[^>]*>[\s\S]*?<\/h1>/i, '').trim(), subchapters: [] };
+         });
+         this.showToast(`Naskah dipecah menjadi ${parts.length} bab otomatis.`, 'success');
+       } else if (!(this.uploadForm.chapters[0].content || '').trim()) {
+         this.uploadForm.chapters[0].content = value;
+         this.showToast('Isi naskah Word dimasukkan ke Bab 1.', 'success');
+       }
+     } catch (err) {
+       this.showToast('Gagal membaca DOCX: ' + err.message, 'error');
+     }
+   },
+
    getSanitizedContent(rawHtml) {
+     rawHtml = this.normalizeChapterContent(rawHtml);
      if (!rawHtml) return '<p class="text-slate-400 italic">Tidak ada isi konten pada bab ini.</p>';
      if (typeof DOMPurify !== 'undefined') {
        return DOMPurify.sanitize(rawHtml, {
