@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pustaka WebBook - Baca, Kumpulkan, dan Terbitkan Buku Digital</title>
-<meta name="description" content="Pustaka WebBook: portal buku digital interaktif. Baca langsung di browser, dengarkan audio bab, dan terbitkan tulisan Anda secara gratis atau berbayar.">
-<meta name="keywords" content="pustaka digital, baca buku online, webbook, terbit buku, e-book indonesia, menulis">
+<title>Katalog WebBook kaffahmedia- Baca, Kumpulkan, dan Terbitkan Buku Digital</title>
+<meta name="description" content="Katalog WebBook: portal buku digital interaktif. Baca langsung di browser, dengarkan audio bab, dan terbitkan tulisan Anda secara gratis atau berbayar.">
+<meta name="keywords" content="Katalog digital, baca buku online, webbook, terbit buku, e-book indonesia, menulis">
 <meta name="author" content="Yana Abu Fillah">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Pustaka WebBook - Portal Buku Digital & Interaktif">
+<meta property="og:title" content="Katalog WebBook - Portal Buku Digital & Interaktif">
 <meta property="og:description" content="Baca buku digital langsung di browser atau terbitkan karya tulis Anda dengan mudah.">
 <meta property="og:image" content="https://cdn.phototourl.com/member/2026-10-24-08317015-b1ce-440f-8038-f9ca50465f76.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📖</text></svg>">
@@ -176,8 +176,8 @@ if (/[?&]book=/.test(location.search)) { location.replace('dashboard.html' + loc
 <nav>
   <div class="wrap nav-in">
     <a href="#top" class="brand">
-      <img src="https://cdn.phototourl.com/member/2026-10-24-08317015-b1ce-440f-8038-f9ca50465f76.png" alt="Logo Pustaka WebBook">
-      <span>Pustaka WebBook</span>
+      <img src="https://cdn.phototourl.com/member/2026-10-24-08317015-b1ce-440f-8038-f9ca50465f76.png" alt="Logo Katalog WebBook">
+      <span>Katalog WebBook Kaffahmedia</span>
     </a>
     <div class="links">
       <a href="#fitur">Fitur</a>
@@ -198,7 +198,7 @@ if (/[?&]book=/.test(location.search)) { location.replace('dashboard.html' + loc
     <div class="rv">
       <span class="eyebrow">📖 Portal Buku Interaktif &amp; Digital</span>
       <h1>Baca, kumpulkan, dan <em>terbitkan</em> buku dalam satu rak.</h1>
-      <p class="lead">Pustaka WebBook membuat buku digital terasa hidup: dibaca langsung di browser, bisa didengarkan, dan terbuka bagi siapa saja yang ingin menerbitkan tulisannya, gratis maupun berbayar.</p>
+      <p class="lead">Katalog WebBook Kaffahmedia membuat buku digital terasa hidup: dibaca langsung di browser, bisa didengarkan, dan terbuka bagi siapa saja yang ingin menerbitkan tulisannya, gratis maupun berbayar.</p>
       <div class="cta-row">
         <a class="btn btn-p" data-main data-catalog href="dashboard.html">Mulai Membaca →</a>
         <a class="btn btn-o" href="#kontribusi">✍️ Kirim Tulisan Saya</a>
@@ -274,7 +274,7 @@ if (/[?&]book=/.test(location.search)) { location.replace('dashboard.html' + loc
     <div class="contrib rv">
       <span class="eyebrow" style="background:rgba(255,255,255,.16);color:#fff">✍️ Ajakan Berkontribusi</span>
       <h2 style="margin-top:14px">Punya tulisan yang layak dibaca? Terbitkan di sini.</h2>
-      <p>Pustaka WebBook terbuka bagi penulis, pengajar, praktisi, dan siapa pun yang ingin berbagi pengetahuan atau cerita. Anda boleh menyumbangkannya secara cuma-cuma, atau menerbitkannya sebagai buku berbayar.</p>
+      <p>Katalog WebBook kaffahmedia terbuka bagi penulis, pengajar, praktisi, dan siapa pun yang ingin berbagi pengetahuan atau cerita. Anda boleh menyumbangkannya secara cuma-cuma, atau menerbitkannya sebagai buku berbayar.</p>
       <div class="paths">
         <div class="path">
           <h3>🎁 Sumbangkan secara gratis</h3>
@@ -351,7 +351,7 @@ if (/[?&]book=/.test(location.search)) { location.replace('dashboard.html' + loc
 
 <footer>
   <div class="wrap f-in">
-    <div>© <span id="yr"></span> Pustaka WebBook. Seluruh hak cipta buku tetap milik penulis atau pemegang hak masing-masing.</div>
+    <div>© <span id="yr"></span> Katalog WebBook Kaffahmedia. Seluruh hak cipta buku tetap milik penulis atau pemegang hak masing-masing.</div>
     <div class="f-links">
       <a data-catalog href="dashboard.html">Rak Buku</a>
       <a data-wa href="#">WhatsApp Admin</a>
@@ -368,7 +368,7 @@ if (/[?&]book=/.test(location.search)) { location.replace('dashboard.html' + loc
 
   document.querySelectorAll('[data-catalog]').forEach(a => a.href = CATALOG_URL);
   document.querySelectorAll('[data-catalog-upload]').forEach(a => a.href = CATALOG_URL + '?aksi=unggah');
-  const waMsg = 'Halo Admin Pustaka WebBook, saya tertarik menyumbangkan/menerbitkan tulisan. Mohon panduannya.';
+  const waMsg = 'Halo Admin Katalog WebBook, saya tertarik menyumbangkan/menerbitkan tulisan. Mohon panduannya.';
   document.querySelectorAll('[data-wa]').forEach(a => {
     a.href = 'https://wa.me/' + ADMIN_WA + '?text=' + encodeURIComponent(waMsg);
     a.target = '_blank'; a.rel = 'noopener noreferrer';
