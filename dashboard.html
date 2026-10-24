@@ -4,6 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Pustaka WebBook - Portal Interaktif</title>
+  <meta name="description" content="Temukan dan baca ribuan buku digital, novel, dan materi edukasi secara interaktif atau terbitkan karya Anda sendiri di Pustaka WebBook.">
+<meta name="keywords" content="pustaka digital, baca buku online, webbook, terbit buku gratis, e-book indonesia">
+<meta name="author" content="Yana Abu Fillah">
+<link rel="canonical" href="https://katalog.kaffahmedia.web.id/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://katalog.kaffahmedia.web.id/">
+<meta property="og:title" content="Pustaka WebBook - Portal Buku Digital & Interaktif">
+<meta property="og:description" content="Baca buku digital langsung di browser atau terbitkan karya tulis Anda dengan mudah.">
+<meta property="og:image" content="https://cdn.phototourl.com/member/2026-10-24-08317015-b1ce-440f-8038-f9ca50465f76.png">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📖</text></svg>">
   <link rel="preconnect" href="https://klumtyeooujhonbrhnzv.supabase.co" crossorigin>
 <link rel="preconnect" href="https://klumtyeooujhonbrhnzv.supabase.co">
@@ -15,12 +24,12 @@
   <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
   <!-- PDF-Lib untuk Stamping Watermark Dinamis -->
   <!-- Engine Logika Aplikasi -->
-  <script defer src="script.js?v=2.4"></script>
+  <script defer src="script.js?v=2.7"></script>
   <!-- Alpine.js Collapse Plugin (Wajib dimuat sebelum Alpine Core) -->
   <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
   <!-- Alpine.js -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <link rel="stylesheet" href="tailwind.css?v=4" />
+  <link rel="stylesheet" href="tailwind.css?v=7" />
   <script defer src="https://cloud.umami.is/script.js" data-website-id="f06bcb2f-20c3-4329-9eb8-5ac5daea37b2"></script>
   <!-- Custom Stylesheet -->
   <link rel="stylesheet" href="style.css" />
@@ -56,14 +65,16 @@
   <header class="border-b border-stone-200/70 bg-[#fdfcfb]/85 dark:border-slate-800 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 transition-colors shadow-[0_2px_15px_-3px_rgba(0,0,0,0.03)]">
     <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center gap-3 cursor-pointer" @click="goToCatalog()">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-700 via-indigo-600 to-amber-600 flex items-center justify-center font-bold text-white shadow-md shadow-indigo-600/25 tracking-wider ring-1 ring-white/40">
-          WB
-        </div>
-        <div>
-          <h1 class="font-bold text-sm text-stone-900 dark:text-white tracking-tight">Pustaka WebBook</h1>
-          <p class="text-[10px] text-stone-500 dark:text-slate-400 font-medium">Portal Buku Interaktif & Digital</p>
-        </div>
-      </div>
+  <!-- Logo Gambar Baru -->
+  <img src="https://cdn.phototourl.com/member/2026-10-24-08317015-b1ce-440f-8038-f9ca50465f76.png" 
+       alt="Logo Katalog WebBook" 
+       class="w-9 h-9 rounded-xl object-cover shadow-md shadow-indigo-600/25 ring-1 ring-white/40" />
+  
+  <div>
+    <h1 class="font-bold text-sm text-stone-900 dark:text-white tracking-tight">Pustaka WebBook</h1>
+    <p class="text-[10px] text-stone-500 dark:text-slate-400 font-medium">Portal Buku Interaktif & Digital</p>
+  </div>
+</div>
 
       <div class="flex items-center gap-2">
                 <!-- Tombol Donasi -->
@@ -81,7 +92,13 @@
           <!-- Ikon Matahari (Saat Mode Gelap) -->
           <svg x-show="darkMode" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 9H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
         </button>
-
+        <template x-if="currentUser">
+          <button @click="openDashboard()" type="button"
+                  class="px-2.5 sm:px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-stone-50 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-200 border border-stone-200 dark:border-slate-700 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
+            <svg class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            <span class="hidden sm:inline">Dasbor</span>
+          </button>
+        </template>
         <template x-if="currentUser">
           <button @click="openProfileModal()" type="button" 
                   class="px-2.5 sm:px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-stone-50 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-200 border border-stone-200 dark:border-slate-700 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
@@ -1668,7 +1685,93 @@
       </form>
     </div>
   </div>
+  <!-- MODAL DASBOR PENULIS -->
+  <div x-show="isDashboardOpen" x-cloak
+       @keydown.escape.window="closeDashboard()"
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl"
+         @click.outside="closeDashboard()">
 
+      <div class="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-bold text-slate-900 dark:text-white">Dasbor Penulis</h3>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">Ringkasan performa buku yang Anda terbitkan.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" @click="loadDashboard()" :disabled="dashboardLoading" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 disabled:opacity-50">Segarkan</button>
+          <button type="button" @click="closeDashboard()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg" aria-label="Tutup">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-5 text-xs">
+        <div x-show="dashboardLoading" class="py-10 text-center text-slate-400 animate-pulse">Memuat statistik...</div>
+        <div x-show="dashboardError" class="p-3 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300" x-text="dashboardError"></div>
+
+        <template x-if="!dashboardLoading && !dashboardError && dashboardData">
+          <div class="space-y-5">
+            <!-- Kartu ringkasan -->
+            <div class="grid grid-cols-3 gap-2 sm:gap-3">
+              <div class="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/60">
+                <p class="text-[10px] font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Pembaca</p>
+                <p class="mt-1 text-2xl font-extrabold text-slate-900 dark:text-white" x-text="dashboardTotals.readers.toLocaleString('id-ID')"></p>
+              </div>
+              <div class="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/60">
+                <p class="text-[10px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Pembelian</p>
+                <p class="mt-1 text-2xl font-extrabold text-slate-900 dark:text-white" x-text="dashboardTotals.purchases.toLocaleString('id-ID')"></p>
+              </div>
+              <div class="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/60">
+                <p class="text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">Buku</p>
+                <p class="mt-1 text-2xl font-extrabold text-slate-900 dark:text-white" x-text="dashboardTotals.books"></p>
+              </div>
+            </div>
+
+            <!-- Bab terpopuler secara keseluruhan -->
+            <div x-show="dashboardTopChapter" class="p-3 rounded-xl bg-stone-50 dark:bg-slate-800/60 border border-stone-200 dark:border-slate-700">
+              <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Bab paling banyak dibaca</p>
+              <p class="mt-1 text-sm font-bold text-slate-900 dark:text-white" x-text="dashboardTopChapter?.title"></p>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400" x-text="`${dashboardTopChapter?.reads}x dibaca · ${dashboardTopChapter?.book}`"></p>
+            </div>
+
+            <!-- Per buku -->
+            <div class="space-y-3">
+              <h4 class="font-bold text-slate-900 dark:text-white">Rincian per buku</h4>
+              <template x-for="b in dashboardData.books" :key="b.id">
+                <div class="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/40">
+                  <div class="flex items-start justify-between gap-3">
+                    <h5 class="font-semibold text-slate-900 dark:text-white leading-snug" x-text="b.title"></h5>
+                    <div class="flex items-center gap-3 flex-shrink-0 text-[11px] text-slate-600 dark:text-slate-400">
+                      <span><strong class="text-indigo-600 dark:text-indigo-400" x-text="b.readers"></strong> pembaca</span>
+                      <span><strong class="text-emerald-600 dark:text-emerald-400" x-text="b.purchases"></strong> pembelian</span>
+                    </div>
+                  </div>
+                  <div class="mt-3 space-y-1.5" x-show="b.top_chapters && b.top_chapters.length">
+                    <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Bab terpopuler</p>
+                    <template x-for="(c, i) in b.top_chapters" :key="i">
+                      <div>
+                        <div class="flex justify-between gap-2 text-[11px] text-slate-700 dark:text-slate-300">
+                          <span class="truncate" x-text="c.title"></span>
+                          <span class="font-semibold" x-text="`${c.reads}x`"></span>
+                        </div>
+                        <div class="mt-0.5 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                          <div class="h-full rounded-full bg-indigo-500" :style="`width:${Math.max(4, (c.reads / b.top_chapters[0].reads) * 100)}%`"></div>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+                  <p x-show="!b.top_chapters || !b.top_chapters.length" class="mt-2 text-[11px] text-slate-400 italic">Belum ada bab yang dibaca.</p>
+                </div>
+              </template>
+              <p x-show="!dashboardData.books.length" class="py-6 text-center text-slate-400">Anda belum menerbitkan buku.</p>
+            </div>
+
+            <p class="text-[10px] text-slate-400 leading-relaxed">Pembaca dihitung per orang unik (akun atau browser). Data mulai terkumpul sejak fitur ini dipasang, dan pembacaan oleh Anda sendiri tidak dihitung.</p>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
   <!-- ========================================== -->
   <!-- MODAL EDIT PROFIL SAYA (PENULIS)           -->
   <!-- ========================================== -->
@@ -2153,6 +2256,222 @@
       </div>
     </div>
   </div>
+  
+  <!-- ========================================== -->
+  <!-- FOOTER                                     -->
+  <!-- ========================================== -->
+  <footer x-show="!activeBook" x-cloak class="mt-16 border-t border-stone-200/80 dark:border-slate-800 bg-[#fdfcfb]/80 dark:bg-slate-900/70 backdrop-blur-sm">
+    <div class="max-w-6xl mx-auto px-4 py-10">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-xs">
+        <div>
+          <div>
+  <div class="flex items-center gap-2.5 mb-3">
+    <!-- Logo Gambar Baru di Footer -->
+    <img src="https://cdn.phototourl.com/member/2026-10-24-08317015-b1ce-440f-8038-f9ca50465f76.png" 
+         alt="Logo Katalog WebBook" 
+         class="w-8 h-8 rounded-lg object-cover" />
+         
+    <span class="font-bold text-sm text-stone-900 dark:text-white">Pustaka WebBook</span>
+  </div>
+  <p class="text-stone-600 dark:text-slate-400 leading-relaxed">Portal buku interaktif dan digital. Baca, kumpulkan, dan terbitkan buku Anda dalam satu rak.</p>
+</div>>
+
+        <div>
+          <h4 class="font-bold text-stone-900 dark:text-white mb-3">Informasi</h4>
+          <ul class="space-y-2 text-stone-600 dark:text-slate-400">
+            <li><button type="button" @click="openLegal('about')" class="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline">Tentang & Cara Kerja</button></li>
+            <li><button type="button" @click="openLegal('privacy')" class="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline">Kebijakan Privasi</button></li>
+            <li><button type="button" @click="openLegal('terms')" class="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline">Syarat & Ketentuan</button></li>
+            <li><button type="button" @click="openLegal('copyright')" class="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline">Kebijakan Hak Cipta</button></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-stone-900 dark:text-white mb-3">Kontak</h4>
+          <ul class="space-y-2 text-stone-600 dark:text-slate-400">
+            <li>
+              <a :href="`https://wa.me/${adminWaNumber}?text=${encodeURIComponent('Halo Admin Pustaka WebBook, saya ingin bertanya.')}`" target="_blank" rel="noopener noreferrer" class="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline">WhatsApp Admin</a>
+            </li>
+            <li>
+              <a :href="`mailto:${adminEmail}`" class="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline break-all" x-text="adminEmail"></a>
+            </li>
+            <li><button type="button" @click="openDonateModal()" class="hover:text-rose-600 dark:hover:text-rose-400 hover:underline">Dukung dengan Donasi</button></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="mt-8 pt-5 border-t border-stone-200/70 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-stone-500 dark:text-slate-500">
+        <span x-text="`© ${new Date().getFullYear()} Pustaka WebBook. Seluruh hak cipta buku tetap milik penulis atau pemegang hak masing-masing.`"></span>
+        <span>Laporan pelanggaran hak cipta: gunakan tombol "Laporkan buku" pada halaman buku.</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ========================================== -->
+  <!-- MODAL HALAMAN INFORMASI & KEBIJAKAN        -->
+  <!-- ========================================== -->
+  <div x-show="isLegalModalOpen" x-cloak
+       @keydown.escape.window="closeLegal()"
+       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+       x-transition:enter="transition ease-out duration-200"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-150"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0">
+
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl relative"
+         @click.outside="closeLegal()"
+         role="dialog" aria-modal="true" aria-labelledby="legalModalTitle">
+
+      <!-- Header + Tab -->
+      <div class="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800">
+        <div class="flex items-center justify-between">
+          <h3 id="legalModalTitle" class="text-base font-bold text-slate-900 dark:text-white" x-text="legalTitles[legalPage]"></h3>
+          <button type="button" @click="closeLegal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg" aria-label="Tutup">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+        <div class="mt-3 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <template x-for="key in ['about','privacy','terms','copyright']" :key="key">
+            <button type="button" @click="legalPage = key; $refs.legalBody.scrollTop = 0"
+                    class="px-3 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap transition border"
+                    :class="legalPage === key
+                      ? 'bg-indigo-600 border-indigo-600 text-white'
+                      : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700'"
+                    x-text="legalTabs[key]"></button>
+          </template>
+        </div>
+      </div>
+
+      <!-- Isi -->
+      <div x-ref="legalBody" class="flex-1 overflow-y-auto p-4 sm:p-6 text-xs sm:text-sm leading-relaxed text-slate-700 dark:text-slate-300 space-y-4">
+
+        <!-- TENTANG & CARA KERJA -->
+        <div x-show="legalPage === 'about'" class="space-y-4">
+          <p>Pustaka WebBook adalah portal buku digital interaktif. Pembaca dapat membaca buku langsung di browser (teks bab, dokumen PDF, atau WebBook interaktif), sedangkan penulis dapat menerbitkan karyanya dan mengelola profil penulisnya sendiri.</p>
+
+          <h4 class="font-bold text-slate-900 dark:text-white">Cara membaca</h4>
+          <ol class="list-decimal pl-5 space-y-1.5">
+            <li>Cari buku lewat kolom pencarian atau filter kategori, akses, dan penulis.</li>
+            <li>Buka kartu buku untuk melihat sinopsis, profil penulis, dan daftar bab.</li>
+            <li>Buku berstatus Gratis dapat dibaca penuh. Buku Berbayar menampilkan pratinjau Bab 1, sedangkan bab lainnya terbuka setelah akses diberikan.</li>
+          </ol>
+
+          <h4 class="font-bold text-slate-900 dark:text-white">Cara membeli buku berbayar</h4>
+          <ol class="list-decimal pl-5 space-y-1.5">
+            <li>Masuk atau daftar akun member, lalu tekan tombol beli pada halaman buku.</li>
+            <li>Konfirmasi pesanan. Anda akan diarahkan ke WhatsApp admin untuk menerima petunjuk pembayaran.</li>
+            <li>Setelah pembayaran diverifikasi admin, akses buku dibuka pada akun yang sama. Verifikasi dilakukan secara manual, sehingga membutuhkan waktu.</li>
+          </ol>
+
+          <h4 class="font-bold text-slate-900 dark:text-white">Cara menerbitkan buku</h4>
+          <ol class="list-decimal pl-5 space-y-1.5">
+            <li>Masuk dengan akun member, lalu pilih Unggah Buku.</li>
+            <li>Isi judul, penulis, sinopsis, kategori, jenis akses, serta bab atau berkas buku.</li>
+            <li>Pilih dasar hak untuk membagikan dan setujui pernyataan hak cipta. Hanya karya sendiri, domain publik, lisensi terbuka, atau karya yang sudah mendapat izin pemegang hak yang boleh diunggah.</li>
+          </ol>
+
+          <p>Butuh bantuan? Hubungi admin lewat WhatsApp atau email pada bagian Kontak di footer.</p>
+        </div>
+
+        <!-- KEBIJAKAN PRIVASI -->
+        <div x-show="legalPage === 'privacy'" class="space-y-4">
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">Berlaku sejak: Oktober 2026</p>
+          <p>Kebijakan ini menjelaskan data apa yang kami simpan saat Anda memakai Pustaka WebBook, untuk apa data itu dipakai, dan bagaimana Anda dapat mengendalikannya.</p>
+
+          <h4 class="font-bold text-slate-900 dark:text-white">Data yang kami simpan</h4>
+          <ul class="list-disc pl-5 space-y-1.5">
+            <li><strong>Akun:</strong> alamat email dan kata sandi. Kata sandi dikelola oleh layanan autentikasi Supabase dan tidak dapat dibaca oleh admin.</li>
+            <li><strong>Profil penulis (opsional):</strong> nama pena, foto, biografi, dan tautan media sosial atau kontak yang Anda isi sendiri. Informasi ini tampil publik pada buku yang Anda terbitkan.</li>
+            <li><strong>Buku dan berkas:</strong> judul, sinopsis, isi bab, sampul, dan dokumen yang Anda unggah.</li>
+            <li><strong>Akses buku:</strong> catatan buku berbayar apa saja yang sudah dibuka untuk akun Anda.</li>
+            <li><strong>Statistik kunjungan:</strong> data kunjungan yang bersifat agregat melalui layanan analitik Umami, untuk mengetahui halaman mana yang sering dibuka.</li>
+          </ul>
+
+          <h4 class="font-bold text-slate-900 dark:text-white">Data di perangkat Anda</h4>
+          <p>Browser Anda menyimpan pilihan tema terang atau gelap, ukuran huruf pembaca, dan salinan profil penulis agar formulir terisi otomatis. Data ini hanya ada di perangkat Anda dan dapat dihapus lewat pengaturan browser.</p>
+
+          <h4 class="font-bold text-slate-900 dark:text-white">Pembayaran dan donasi</h4>
+          <p>Pembayaran dan donasi dikonfirmasi lewat WhatsApp. Portal ini tidak menyimpan nomor kartu atau data rekening Anda. Pesan yang Anda kirim lewat WhatsApp tunduk pada kebijakan WhatsApp.</p>
+
+          <h4 class="font-bold text-slate-900 dark:text-white">Dengan siapa data dibagikan</h4>
+          <p>Kami tidak menjual data Anda. Data disimpan dan diproses oleh penyedia layanan yang menjalankan portal ini, yaitu Supabase (basis data, autentikasi, dan penyimpanan berkas) dan Umami (statistik kunjungan). Data juga dapat kami buka bila diwajibkan oleh hukum.</p>
+
+          <h4 class="font-bold text-slate-900 dark:text-white">Hak Anda</h4>
+          <p>Anda dapat meminta perbaikan data, penghapusan akun, atau penghapusan buku yang Anda unggah dengan menghubungi admin. Profil penulis dapat Anda ubah sendiri kapan saja lewat tombol Profil Saya.</p>
+
+          <h4 class="font-bold text-slate-900 dark:text-white">Kontak</h4>
+          <p>Pertanyaan tentang privasi: <a :href="`mailto:${adminEmail}`" class="text-indigo-600 dark:text-indigo-400 underline break-all" x-text="adminEmail"></a>.</p>
+        </div>
+
+        <!-- SYARAT & KETENTUAN -->
+        <div x-show="legalPage === 'terms'" class="space-y-4">
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">Berlaku sejak: Oktober 2026</p>
+          <p>Dengan memakai Pustaka WebBook, Anda menyetujui syarat berikut.</p>
+
+          <h4 class="font-bold text-slate-900 dark:text-white">1. Akun</h4>
+          <p>Anda bertanggung jawab menjaga kerahasiaan kata sandi dan seluruh aktivitas pada akun Anda. Gunakan email yang aktif dan benar.</p>
+
+          <h4 class="font-bold text-slate-900 dark:text-white">2. Konten yang diunggah</h4>
+          <ul class="list-disc pl-5 space-y-1.5">
+            <li>Anda hanya boleh mengunggah karya sendiri, karya domain publik, karya berlisensi terbuka, atau karya yang sudah mendapat izin pemegang hak.</li>
+            <li>Anda bertanggung jawab penuh atas keaslian dan legalitas konten yang diunggah.</li>
+            <li>Dilarang mengunggah konten yang melanggar hukum, mengandung kebencian, pornografi, penipuan, atau malware.</li>
+            <li>Admin berhak menurunkan, menyembunyikan, atau menghapus konten yang melanggar ketentuan ini tanpa pemberitahuan lebih dulu.</li>
+          </ul>
+
+          <h4 class="font-bold text-slate-900 dark:text-white">3. Pembelian buku berbayar</h4>
+          <ul class="list-disc pl-5 space-y-1.5">
+            <li>Akses dibuka setelah pembayaran diverifikasi admin dan melekat pada akun pembeli.</li>
+            <li>Akses bersifat pribadi. Dilarang membagikan akun, menyalin, atau menyebarkan ulang isi buku. Dokumen PDF yang diunduh dapat diberi watermark berisi identitas akun pembeli.</li>
+            <li>Permintaan pengembalian dana atau kendala akses dapat disampaikan ke admin dan ditinjau satu per satu.</li>
+          </ul>
+
+          <h4 class="font-bold text-slate-900 dark:text-white">4. Donasi</h4>
+          <p>Donasi bersifat sukarela untuk mendukung pengembangan portal dan tidak memberikan hak atau akses tertentu.</p>
+
+          <h4 class="font-bold text-slate-900 dark:text-white">5. Ketersediaan layanan</h4>
+          <p>Kami berusaha menjaga portal tetap berjalan, namun tidak menjamin layanan bebas gangguan. Fitur dapat berubah sewaktu-waktu.</p>
+
+          <h4 class="font-bold text-slate-900 dark:text-white">6. Perubahan ketentuan</h4>
+          <p>Syarat ini dapat diperbarui. Pemakaian portal setelah pembaruan berarti Anda menyetujui versi terbaru.</p>
+
+          <h4 class="font-bold text-slate-900 dark:text-white">Kontak</h4>
+          <p>Pertanyaan tentang syarat ini: <a :href="`mailto:${adminEmail}`" class="text-indigo-600 dark:text-indigo-400 underline break-all" x-text="adminEmail"></a>.</p>
+        </div>
+
+        <!-- KEBIJAKAN HAK CIPTA -->
+        <div x-show="legalPage === 'copyright'" class="space-y-4">
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">Berlaku sejak: Oktober 2026</p>
+          <p>Kami menghormati hak cipta. Seluruh hak atas sebuah buku tetap dimiliki penulis atau pemegang haknya masing-masing.</p>
+
+          <h4 class="font-bold text-slate-900 dark:text-white">Tanggung jawab pengunggah</h4>
+          <p>Setiap buku diunggah bersama pernyataan dasar hak (karya sendiri, izin pemegang hak, domain publik, atau lisensi terbuka) dan persetujuan pengunggah. Pengunggah bertanggung jawab atas pernyataan tersebut.</p>
+
+          <h4 class="font-bold text-slate-900 dark:text-white">Cara melaporkan pelanggaran</h4>
+          <ol class="list-decimal pl-5 space-y-1.5">
+            <li>Buka halaman buku yang dipermasalahkan, lalu tekan tombol <strong>Laporkan buku</strong>. Pesan WhatsApp ke admin akan terisi otomatis dengan judul, penulis, dan tautan buku.</li>
+            <li>Sebutkan alasan laporan, karya asli yang dilanggar, dan bukti kepemilikan hak bila ada.</li>
+            <li>Anda juga dapat melapor lewat email ke <a :href="`mailto:${adminEmail}`" class="text-indigo-600 dark:text-indigo-400 underline break-all" x-text="adminEmail"></a>.</li>
+          </ol>
+
+          <h4 class="font-bold text-slate-900 dark:text-white">Tindak lanjut</h4>
+          <ul class="list-disc pl-5 space-y-1.5">
+            <li>Admin meninjau laporan dan dapat meminta bukti izin dari pengunggah.</li>
+            <li>Buku dapat disembunyikan sementara selama peninjauan, dan dihapus bila pelanggaran terbukti atau pengunggah tidak dapat menunjukkan haknya.</li>
+            <li>Akun yang berulang kali melanggar dapat ditutup.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Footer modal -->
+      <div class="p-3 sm:p-4 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+        <button type="button" @click="closeLegal()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold transition">Tutup</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Tombol & Modal Beri Akses (khusus admin) -->
 <button x-show="isAdmin" style="display:none;position:fixed;left:16px;bottom:16px;z-index:60;background:#059669;color:#fff;border:0;border-radius:9999px;padding:10px 16px;font-size:13px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.3);cursor:pointer"
   @click="openGrantModal()">🔑 Beri Akses</button>
