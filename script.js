@@ -158,6 +158,9 @@ function portalEngine() {
     selectedAuthor: 'Semua Penulis',
     accessOptions: ['Semua', 'Gratis', 'Semi Berbayar', 'Berbayar'],
     sortBy: 'newest',
+    currentPage: 1,
+    perPage: 12,
+    
 
     // State Modal Media Sosial Penulis
     isAuthorSocialModalOpen: false,
@@ -176,6 +179,8 @@ function portalEngine() {
     categories: ['Semua', 'Teknologi & AI', 'Edukasi & Parenting', 'Bisnis & SOP', 'Agama & Pemikiran'],
 
     init() {
+      ['searchQuery', 'selectedCategory', 'selectedAccess', 'selectedAuthor', 'scopeFilter', 'sortBy']
+        .forEach(key => this.$watch(key, () => { this.currentPage = 1; }));
       if (new URLSearchParams(window.location.search).get('aksi') === 'unggah') this.currentView = 'upload';
       const savedTheme = localStorage.getItem('theme');
       if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -727,6 +732,31 @@ function portalEngine() {
        if (this.sortBy === 'newest') return new Date(b.createdAt) - new Date(a.createdAt);
        return 0;
      });
+   },
+
+   get totalPages() {
+     return Math.max(1, Math.ceil(this.filteredBooks.length / this.perPage));
+   },
+
+   get pagedBooks() {
+     const start = (this.currentPage - 1) * this.perPage;
+     return this.filteredBooks.slice(start, start + this.perPage);
+   },
+
+   get pageNumbers() {
+     const total = this.totalPages, cur = this.currentPage;
+     const pages = [];
+     for (let i = 1; i <= total; i++) {
+       if (i === 1 || i === total || Math.abs(i - cur) <= 1) pages.push(i);
+       else if (pages[pages.length - 1] !== '...') pages.push('...');
+     }
+     return pages;
+   },
+
+   goToPage(n) {
+     if (n < 1 || n > this.totalPages) return;
+     this.currentPage = n;
+     window.scrollTo({ top: 0, behavior: 'smooth' });
    },
 
    handleFileChange(event) {
@@ -1901,6 +1931,7 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
      this.selectedAccess = 'Semua';
      this.selectedAuthor = 'Semua Penulis';
      this.sortBy = 'newest';
+     this.currentPage = 1;
    },
 
    goToCatalog() {

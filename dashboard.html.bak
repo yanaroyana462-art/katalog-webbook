@@ -24,12 +24,12 @@
   <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
   <!-- PDF-Lib untuk Stamping Watermark Dinamis -->
   <!-- Engine Logika Aplikasi -->
-  <script defer src="script.js?v=2.8"></script>
+  <script defer src="script.js?v=2.11"></script>
   <!-- Alpine.js Collapse Plugin (Wajib dimuat sebelum Alpine Core) -->
   <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
   <!-- Alpine.js -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <link rel="stylesheet" href="tailwind.css?v=8" />
+  <link rel="stylesheet" href="tailwind.css?v=11" />
   <script defer src="https://cloud.umami.is/script.js" data-website-id="f06bcb2f-20c3-4329-9eb8-5ac5daea37b2"></script>
   <!-- Custom Stylesheet -->
   <link rel="stylesheet" href="style.css" />
@@ -865,9 +865,9 @@
               <div>
                 <div class="flex items-center justify-between mb-1">
                   <label class="text-[11px] font-semibold text-slate-600 dark:text-slate-400">Konten Bab</label>
-                  <span class="text-[10px] text-slate-400">HTML / Teks</span>
+                  <span class="text-[10px] text-slate-400">Tempel dari Word atau ketik biasa</span>
                 </div>
-                <textarea x-model="chap.content" rows="3" placeholder="Tuliskan isi materi bab di sini..."
+                <textarea x-model="chap.content" rows="8" @paste="handleContentPaste($event, chap)" placeholder="Tempel naskah dari Word di sini, atau ketik biasa. Enter = paragraf baru."
                           class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono transition"></textarea>
               </div>
 
@@ -880,7 +880,7 @@
                     </div>
                     <input type="text" x-model="subchap.title" :placeholder="`Judul Subbab ${idx + 1}.${subIdx + 1}`"
                            class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition" />
-                    <textarea x-model="subchap.content" rows="3" placeholder="Tuliskan isi materi subbab di sini..."
+                    <textarea x-model="subchap.content" rows="6" @paste="handleContentPaste($event, subchap)" placeholder="Tempel naskah dari Word di sini, atau ketik biasa."
                               class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono transition"></textarea>
                   </div>
                 </template>
@@ -1217,7 +1217,7 @@
               </button>
             </template>
             <button @click="if (activeBook?.fileUrl || activeBook?.file_url) { readerTab = 'document'; stopTTS(); loadSignedUrlForActiveBook(); } else if (activeBook?.external_link) { readerTab = 'external'; stopTTS(); } else { startReading(0); }" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs md:text-sm font-semibold shadow-md shadow-indigo-600/30 transition flex items-center justify-center gap-2 text-center">
-              <span x-text="activeBook?.accessType === 'Berbayar' && !purchasedBookIds.includes(activeBook?.id) ? 'Baca Pratinjau (Bab 1)' : 'Mulai Baca Bab 1'"></span>
+              <span x-text="activeBook?.accessType === 'Berbayar' && !purchasedBookIds.includes(activeBook?.id) ? 'Baca Pratinjau' : 'Mulai Membaca'"></span>
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
             </button>
             <button @click="shareBook(activeBook)" class="px-4 py-2.5 bg-stone-100 hover:bg-stone-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-200 rounded-xl text-xs md:text-sm font-semibold border border-stone-200 dark:border-slate-700 transition flex items-center justify-center gap-2 text-center" title="Bagikan Buku">
@@ -1511,7 +1511,7 @@
               <div class="flex items-start gap-2 min-w-0">
                 <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] flex-shrink-0"
                       :class="readerTab === 'text' && currentChapterIndex === idx ? 'bg-indigo-600 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'"
-                      x-text="isSubchapter(chapter) ? getChapterSubchapter(chapter).subchapterIndex : getChapterLabel(chapter, idx).replace('Bab ', '')"></span>
+                      x-text="getChapterBadge(chapter, idx)"></span>
                     <span class="truncate leading-5" :class="isSubchapter(chapter) ? 'pl-2 text-[11px]' : ''" x-text="`${getChapterLabel(chapter, idx)}: ${getChapterDisplayTitle(chapter)}`"></span>
               </div>
               <span x-show="activeBook?.accessType === 'Berbayar' && !purchasedBookIds.includes(activeBook?.id) && idx > 0" class="text-amber-500 flex-shrink-0">

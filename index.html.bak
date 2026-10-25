@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Katalog WebBook kaffahmedia- Baca, Kumpulkan, dan Terbitkan Buku Digital</title>
+<meta name="description" content="Katalog WebBook: portal buku digital interaktif. Baca langsung di browser, dengarkan audio bab, dan terbitkan tulisan Anda secara gratis atau berbayar.">
+<meta name="keywords" content="Katalog digital, baca buku online, webbook, terbit buku, e-book indonesia, menulis">
+<meta name="author" content="Yana Abu Fillah">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Katalog WebBook - Portal Buku Digital & Interaktif">
+<meta property="og:description" content="Baca buku digital langsung di browser atau terbitkan karya tulis Anda dengan mudah.">
+<meta property="og:image" content="https://cdn.phototourl.com/member/2026-10-24-08317015-b1ce-440f-8038-f9ca50465f76.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📖</text></svg>">
+<script defer src="https://cloud.umami.is/script.js" data-website-id="f06bcb2f-20c3-4329-9eb8-5ac5daea37b2"></script>
+<style>
+/* ====== GANTI TAUTAN INI JIKA PERLU: lihat variabel CATALOG_URL di bagian script ====== */
+:root{
+  --bg:#faf8f5; --bg2:#f3efe6; --card:#ffffff; --ink:#1c1917; --muted:#57534e; --line:#e7e1d4;
+  --brand:#4f46e5; --brand-d:#4338ca; --amber:#b45309; --amber-bg:#fef3c7; --green:#047857; --green-bg:#d1fae5;
+  --blue:#1d4ed8; --blue-bg:#dbeafe; --rose:#be123c; --shadow:0 10px 40px -12px rgba(80,60,20,.18);
+}
+:root[data-theme="dark"]{
+  --bg:#0b1120; --bg2:#0f172a; --card:#111a2e; --ink:#f1f5f9; --muted:#94a3b8; --line:#1e293b;
+  --brand:#818cf8; --brand-d:#6366f1; --amber:#fbbf24; --amber-bg:#3a2a07; --green:#34d399; --green-bg:#06301f;
+  --blue:#60a5fa; --blue-bg:#0d2247; --rose:#fb7185; --shadow:0 10px 40px -12px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased;transition:background .3s,color .3s;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+.serif{font-family:Georgia,"Times New Roman",serif}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+section{padding:72px 0}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);background:var(--amber-bg);padding:5px 12px;border-radius:999px}
+h2.title{font-family:Georgia,serif;font-size:clamp(26px,4vw,38px);line-height:1.2;margin-top:14px;letter-spacing:-.01em}
+p.lead{color:var(--muted);font-size:16px;max-width:620px;margin-top:12px}
+.center{text-align:center}.center p.lead{margin-left:auto;margin-right:auto}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.nav-in{display:flex;align-items:center;justify-content:space-between;height:62px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:15px}
+.brand img{width:34px;height:34px;border-radius:10px;object-fit:cover}
+.links{display:flex;gap:22px;font-size:14px;font-weight:500;color:var(--muted)}
+.links a:hover{color:var(--ink)}
+.nav-r{display:flex;align-items:center;gap:8px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 20px;border-radius:12px;font-weight:700;font-size:14px;border:1px solid transparent;cursor:pointer;transition:transform .15s,background .2s,box-shadow .2s;font-family:inherit}
+.btn:hover{transform:translateY(-2px)}
+.btn-p{background:var(--brand);color:#fff;box-shadow:0 8px 22px -8px var(--brand)}
+.btn-p:hover{background:var(--brand-d)}
+.btn-o{background:var(--card);color:var(--ink);border-color:var(--line)}
+.btn-o:hover{border-color:var(--brand)}
+.btn-g{background:#059669;color:#fff;box-shadow:0 8px 22px -8px #059669}
+.btn-sm{padding:8px 14px;font-size:13px;border-radius:10px}
+.icon-btn{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--card);cursor:pointer;font-size:16px;color:var(--ink)}
+
+/* HERO */
+.hero{padding:64px 0 40px;position:relative}
+.hero::before{content:"";position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:900px;height:380px;background:radial-gradient(closest-side,rgba(251,191,36,.28),rgba(99,102,241,.14),transparent);filter:blur(30px);z-index:-1;pointer-events:none}
+.hero-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center}
+h1{font-family:Georgia,serif;font-size:clamp(34px,5.4vw,58px);line-height:1.08;letter-spacing:-.02em;margin-top:18px}
+h1 em{font-style:normal;color:var(--brand)}
+.hero p.lead{font-size:17px}
+.cta-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:28px}
+.trust{display:flex;flex-wrap:wrap;gap:16px;margin-top:26px;font-size:13px;color:var(--muted)}
+.trust span::before{content:"✓ ";color:var(--green);font-weight:800}
+
+/* Book mock */
+.stage{position:relative;height:420px;display:flex;align-items:center;justify-content:center}
+.book{position:absolute;width:190px;height:268px;border-radius:6px 14px 14px 6px;box-shadow:var(--shadow),inset 6px 0 0 rgba(0,0,0,.18);color:#fff;padding:20px 18px;display:flex;flex-direction:column;justify-content:space-between;transition:transform .4s}
+.book small{font-size:10px;letter-spacing:.1em;text-transform:uppercase;opacity:.85;font-weight:700}
+.book b{font-family:Georgia,serif;font-size:21px;line-height:1.2}
+.book i{font-style:normal;font-size:11px;opacity:.9}
+.b1{background:linear-gradient(150deg,#6366f1,#7c3aed);transform:translateX(-95px) rotate(-9deg)}
+.b2{background:linear-gradient(150deg,#d97706,#b45309);transform:translateX(95px) rotate(8deg)}
+.b3{background:linear-gradient(150deg,#0f766e,#064e3b);z-index:2;transform:translateY(-8px);width:210px;height:296px}
+.stage:hover .b1{transform:translateX(-120px) rotate(-12deg)}
+.stage:hover .b2{transform:translateX(120px) rotate(11deg)}
+.chip{position:absolute;z-index:3;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 12px;font-size:12px;font-weight:700;box-shadow:var(--shadow)}
+.c1{top:34px;right:6px}.c2{bottom:44px;left:0}
+
+/* Feature grid */
+.grid{display:grid;gap:18px;margin-top:40px}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:repeat(2,1fr)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;transition:transform .2s,box-shadow .2s,border-color .2s}
+.card:hover{transform:translateY(-4px);box-shadow:var(--shadow);border-color:var(--brand)}
+.ic{width:44px;height:44px;border-radius:12px;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:14px}
+.card h3{font-size:16px;margin-bottom:6px}
+.card p{font-size:14px;color:var(--muted)}
+
+/* Alt band */
+.band{background:var(--bg2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+
+/* Steps */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:40px;counter-reset:s}
+.step{position:relative;padding:26px 22px 22px;background:var(--card);border:1px solid var(--line);border-radius:18px}
+.step::before{counter-increment:s;content:counter(s);position:absolute;top:-16px;left:20px;width:34px;height:34px;border-radius:50%;background:var(--brand);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px -4px var(--brand)}
+.step h3{font-size:16px;margin-bottom:6px}.step p{font-size:14px;color:var(--muted)}
+
+/* Access tiers */
+.tier{display:flex;flex-direction:column}
+.badge{display:inline-block;align-self:flex-start;font-size:11px;font-weight:800;padding:4px 10px;border-radius:999px;margin-bottom:12px}
+.bg-green{background:var(--green-bg);color:var(--green)}.bg-amber{background:var(--amber-bg);color:var(--amber)}.bg-blue{background:var(--blue-bg);color:var(--blue)}
+.tier ul{list-style:none;margin-top:12px;font-size:14px;color:var(--muted);display:grid;gap:8px}
+.tier li::before{content:"•  ";color:var(--brand);font-weight:900}
+
+/* Contribute */
+.contrib{background:linear-gradient(135deg,#312e81,#4f46e5 55%,#7c3aed);color:#fff;border-radius:28px;padding:48px 36px;position:relative;overflow:hidden}
+.contrib::after{content:"";position:absolute;right:-80px;top:-80px;width:300px;height:300px;border-radius:50%;background:rgba(255,255,255,.08)}
+.contrib h2{font-family:Georgia,serif;font-size:clamp(26px,4vw,38px);line-height:1.2}
+.contrib p{color:rgba(255,255,255,.85);max-width:640px;margin-top:12px}
+.paths{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:30px;position:relative;z-index:1}
+.path{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);border-radius:18px;padding:22px;backdrop-filter:blur(6px)}
+.path h3{font-size:17px;margin-bottom:6px}
+.path p{font-size:14px;margin:0 0 10px;color:rgba(255,255,255,.88)}
+.path ul{list-style:none;font-size:13.5px;display:grid;gap:6px;color:rgba(255,255,255,.92)}
+.path li::before{content:"✓  ";font-weight:900;color:#a7f3d0}
+.contrib .cta-row .btn-w{background:#fff;color:#312e81}
+.contrib .cta-row .btn-l{background:transparent;color:#fff;border-color:rgba(255,255,255,.5)}
+
+.rules{margin-top:24px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.rule{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;font-size:13px;text-align:center}
+.rule b{display:block;font-size:14px;margin-bottom:2px}.rule span{color:var(--muted)}
+
+/* FAQ */
+details{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin-top:12px}
+summary{cursor:pointer;font-weight:700;font-size:15px;list-style:none;display:flex;justify-content:space-between;gap:12px}
+summary::after{content:"+";font-size:20px;color:var(--brand);line-height:1}
+details[open] summary::after{content:"–"}
+details p{margin-top:10px;color:var(--muted);font-size:14px}
+.faq{max-width:760px;margin:30px auto 0}
+
+/* Final CTA */
+.final{text-align:center;padding:64px 20px;background:var(--card);border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow)}
+.final h2{font-family:Georgia,serif;font-size:clamp(26px,4vw,40px);line-height:1.2}
+.final p{color:var(--muted);max-width:520px;margin:12px auto 0}
+.final .cta-row{justify-content:center}
+
+footer{border-top:1px solid var(--line);padding:36px 0;margin-top:72px;font-size:13px;color:var(--muted)}
+.f-in{display:flex;flex-wrap:wrap;gap:18px;justify-content:space-between;align-items:center}
+.f-links{display:flex;flex-wrap:wrap;gap:18px}
+.f-links a:hover{color:var(--brand)}
+
+/* reveal */
+.rv{opacity:0;transform:translateY(22px);transition:opacity .7s,transform .7s}
+.rv.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}.btn:hover,.card:hover{transform:none}html{scroll-behavior:auto}}
+
+@media (max-width:900px){
+  .hero-grid{grid-template-columns:1fr}
+  .stage{height:360px}
+  .g3,.steps{grid-template-columns:1fr 1fr}
+  .rules{grid-template-columns:1fr 1fr}
+  .links{display:none}
+}
+@media (max-width:600px){
+  section{padding:52px 0}
+  .g3,.g2,.steps,.paths{grid-template-columns:1fr}
+  .contrib{padding:34px 22px}
+  .book{width:140px;height:200px;padding:14px}.b3{width:156px;height:224px}
+  .book b{font-size:16px}
+  .b1{transform:translateX(-70px) rotate(-9deg)}.b2{transform:translateX(70px) rotate(8deg)}
+  .stage{height:300px}
+  .nav-r .hide-s{display:none}
+}
+</style>
+<script>
+/* Tautan buku lama (?book=ID) langsung diteruskan ke aplikasi */
+if (/[?&]book=/.test(location.search)) { location.replace('dashboard.html' + location.search); }
+</script>
+</head>
+<body>
+
+<nav>
+  <div class="wrap nav-in">
+    <a href="#top" class="brand">
+      <img src="https://cdn.phototourl.com/member/2026-10-24-08317015-b1ce-440f-8038-f9ca50465f76.png" alt="Logo Katalog WebBook">
+      <span>Katalog WebBook Kaffahmedia</span>
+    </a>
+    <div class="links">
+      <a href="#fitur">Fitur</a>
+      <a href="#cara">Cara Kerja</a>
+      <a href="#akses">Jenis Akses</a>
+      <a href="#kontribusi">Berkontribusi</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <div class="nav-r">
+      <button class="icon-btn" id="themeBtn" aria-label="Ganti tema terang/gelap">🌙</button>
+      <a class="btn btn-p btn-sm" data-main data-catalog href="dashboard.html">Jelajahi Rak</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap hero-grid">
+    <div class="rv">
+      <span class="eyebrow">📖 Portal Buku Interaktif &amp; Digital</span>
+      <h1>Baca, kumpulkan, dan <em>terbitkan</em> buku dalam satu rak.</h1>
+      <p class="lead">Katalog WebBook Kaffahmedia membuat buku digital terasa hidup: dibaca langsung di browser, bisa didengarkan, dan terbuka bagi siapa saja yang ingin menerbitkan tulisannya, gratis maupun berbayar.</p>
+      <div class="cta-row">
+        <a class="btn btn-p" data-main data-catalog href="dashboard.html">Mulai Membaca →</a>
+        <a class="btn btn-o" href="#kontribusi">✍️ Kirim Tulisan Saya</a>
+      </div>
+      <div class="trust">
+        <span>Tanpa instal aplikasi</span>
+        <span>Nyaman di HP</span>
+        <span>Mode terang &amp; gelap</span>
+      </div>
+    </div>
+    <div class="stage rv" aria-hidden="true">
+      <div class="book b1"><small>Teknologi &amp; AI</small><b>Arsitektur Sistem Modern</b><i>Penulis Anda</i></div>
+      <div class="book b2"><small>Edukasi</small><b>Mendidik dengan Hati</b><i>Penulis Anda</i></div>
+      <div class="book b3"><small>Pemikiran</small><b>Tulisan Anda Bisa Ada di Sini</b><i>Contoh tampilan sampul</i></div>
+      <div class="chip c1">🎧 Dengarkan bab</div>
+      <div class="chip c2">📄 PDF &amp; WebBook</div>
+    </div>
+  </div>
+</header>
+
+<section id="fitur">
+  <div class="wrap">
+    <div class="center rv">
+      <span class="eyebrow">Fitur</span>
+      <h2 class="title">Semua yang dibutuhkan pembaca dan penulis</h2>
+      <p class="lead">Dirancang sederhana: buka, baca, dan bagikan. Tanpa unduh aplikasi tambahan.</p>
+    </div>
+    <div class="grid g3">
+      <div class="card rv"><div class="ic">📚</div><h3>Rak buku terkurasi</h3><p>Cari berdasarkan judul atau penulis, saring per kategori, jenis akses, dan penulis, lalu urutkan sesuai selera.</p></div>
+      <div class="card rv"><div class="ic">📖</div><h3>Tiga cara membaca</h3><p>Teks bab yang nyaman, dokumen PDF di dalam halaman, atau WebBook interaktif yang tampil langsung di portal.</p></div>
+      <div class="card rv"><div class="ic">🎧</div><h3>Dengarkan bab</h3><p>Fitur audio membacakan isi bab berbahasa Indonesia, cocok saat Anda sedang bepergian atau mengistirahatkan mata.</p></div>
+      <div class="card rv"><div class="ic">🔠</div><h3>Ukuran huruf &amp; tema</h3><p>Atur ukuran huruf dan pilih mode terang atau gelap. Preferensi Anda diingat oleh browser.</p></div>
+      <div class="card rv"><div class="ic">🧭</div><h3>Daftar isi &amp; navigasi cepat</h3><p>Lompat antarbab lewat daftar isi, atau ganti buku dengan tombol pencarian cepat yang selalu ada.</p></div>
+      <div class="card rv"><div class="ic">🔗</div><h3>Mudah dibagikan</h3><p>Bagikan tautan buku ke WhatsApp, Telegram, X, atau Facebook dengan kalimat ajakan yang bisa Anda tulis sendiri.</p></div>
+      <div class="card rv"><div class="ic">👤</div><h3>Profil penulis</h3><p>Tampilkan foto, biografi, dan tautan media sosial atau kontak agar pembaca bisa mengenal Anda.</p></div>
+      <div class="card rv"><div class="ic">📊</div><h3>Dasbor penulis</h3><p>Pantau jumlah pembaca, pembelian, dan bab yang paling banyak dibaca pada setiap buku Anda.</p></div>
+      <div class="card rv"><div class="ic">🛡️</div><h3>Dokumen terlindungi</h3><p>PDF buku berbayar hanya terbuka untuk pembeli, dan unduhan dapat diberi watermark identitas akun pembeli.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="cara">
+  <div class="wrap">
+    <div class="center rv">
+      <span class="eyebrow">Cara Kerja</span>
+      <h2 class="title">Mulai membaca dalam tiga langkah</h2>
+    </div>
+    <div class="steps">
+      <div class="step rv"><h3>Jelajahi rak</h3><p>Temukan buku lewat pencarian atau kategori, lalu buka kartunya untuk melihat sinopsis, profil penulis, dan daftar bab.</p></div>
+      <div class="step rv"><h3>Pilih cara membaca</h3><p>Baca teks bab, buka PDF, atau masuk ke WebBook interaktif. Buku gratis dapat dibaca penuh tanpa biaya.</p></div>
+      <div class="step rv"><h3>Simpan &amp; bagikan</h3><p>Masuk dengan akun member untuk membuka buku berbayar, mengelola profil, dan membagikan buku favorit Anda.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="akses">
+  <div class="wrap">
+    <div class="center rv">
+      <span class="eyebrow">Jenis Akses</span>
+      <h2 class="title">Gratis, semi berbayar, atau berbayar</h2>
+      <p class="lead">Setiap penulis menentukan sendiri bagaimana karyanya dinikmati pembaca.</p>
+    </div>
+    <div class="grid g3">
+      <div class="card tier rv"><span class="badge bg-green">Gratis</span><h3>Terbuka untuk semua</h3><p>Dibaca penuh oleh siapa saja, tanpa biaya.</p><ul><li>Cocok untuk ilmu yang ingin disebarkan seluas mungkin</li><li>Menjangkau pembaca baru lebih cepat</li></ul></div>
+      <div class="card tier rv"><span class="badge bg-amber">Semi Berbayar</span><h3>Sebagian terbuka</h3><p>Pembaca mendapat gambaran isi sebelum memutuskan.</p><ul><li>Cocok untuk karya yang ingin dicicipi dulu</li><li>Menjembatani pembaca menuju karya lain Anda</li></ul></div>
+      <div class="card tier rv"><span class="badge bg-blue">Berbayar</span><h3>Akses penuh setelah beli</h3><p>Bab 1 tersedia sebagai pratinjau, selebihnya terbuka bagi pembeli.</p><ul><li>Anda yang menentukan harga bukunya</li><li>Akses melekat pada akun pembeli</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="kontribusi">
+  <div class="wrap">
+    <div class="contrib rv">
+      <span class="eyebrow" style="background:rgba(255,255,255,.16);color:#fff">✍️ Ajakan Berkontribusi</span>
+      <h2 style="margin-top:14px">Punya tulisan yang layak dibaca? Terbitkan di sini.</h2>
+      <p>Katalog WebBook kaffahmedia terbuka bagi penulis, pengajar, praktisi, dan siapa pun yang ingin berbagi pengetahuan atau cerita. Anda boleh menyumbangkannya secara cuma-cuma, atau menerbitkannya sebagai buku berbayar.</p>
+      <div class="paths">
+        <div class="path">
+          <h3>🎁 Sumbangkan secara gratis</h3>
+          <p>Bagikan ilmu sebagai amal jariyah atau karya terbuka untuk pembaca.</p>
+          <ul><li>Nama Anda tampil sebagai penulis</li><li>Profil dan tautan sosial untuk dikenal pembaca</li><li>Pantau pembaca lewat dasbor</li></ul>
+        </div>
+        <div class="path">
+          <h3>💼 Terbitkan sebagai berbayar</h3>
+          <p>Tetapkan harga untuk buku, panduan, atau materi eksklusif Anda.</p>
+          <ul><li>Atur harga sendiri, pratinjau Bab 1 otomatis tersedia</li><li>PDF terlindungi dan bisa diberi watermark pembeli</li><li>Pantau jumlah pembelian di dasbor</li></ul>
+        </div>
+      </div>
+      <div class="cta-row" style="position:relative;z-index:1">
+        <a class="btn btn-w" data-upload-main data-catalog-upload href="dashboard.html">Daftar &amp; Unggah Buku →</a>
+        <a class="btn btn-l" data-wa href="#">💬 Tanya Admin via WhatsApp</a>
+      </div>
+    </div>
+
+    <div class="center" style="margin-top:44px">
+      <h3 class="serif" style="font-size:22px">Sebelum mengunggah, pastikan karya Anda termasuk salah satu ini</h3>
+    </div>
+    <div class="rules">
+      <div class="rule"><b>Karya sendiri</b><span>Tulisan yang Anda buat</span></div>
+      <div class="rule"><b>Berizin</b><span>Sudah mendapat izin pemegang hak</span></div>
+      <div class="rule"><b>Domain publik</b><span>Hak ciptanya sudah berakhir</span></div>
+      <div class="rule"><b>Lisensi terbuka</b><span>Boleh dibagikan ulang</span></div>
+    </div>
+    <p class="center" style="color:var(--muted);font-size:13px;margin-top:14px">Format yang diterima: PDF, EPUB, DOCX, TXT, MD, HTML, JSON (maks. 15 MB), atau tulis bab langsung di editor. Sampul &amp; foto penulis maks. 2 MB.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="center rv">
+      <span class="eyebrow">Transparan &amp; Aman</span>
+      <h2 class="title">Dibangun dengan menghormati hak cipta</h2>
+    </div>
+    <div class="grid g2" style="max-width:860px;margin-left:auto;margin-right:auto">
+      <div class="card rv"><div class="ic">⚖️</div><h3>Pernyataan hak wajib</h3><p>Setiap buku diunggah bersama dasar hak dan persetujuan pengunggah. Pelanggaran dapat dilaporkan lewat tombol "Laporkan buku" di halaman buku.</p></div>
+      <div class="card rv"><div class="ic">🤝</div><h3>Pembelian terverifikasi</h3><p>Pembayaran dikonfirmasi lewat WhatsApp admin dan dibuka manual pada akun pembeli, sehingga prosesnya membutuhkan sedikit waktu.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="faq">
+  <div class="wrap">
+    <div class="center rv">
+      <span class="eyebrow">FAQ</span>
+      <h2 class="title">Pertanyaan yang sering muncul</h2>
+    </div>
+    <div class="faq">
+      <details><summary>Apakah saya perlu akun untuk membaca?</summary><p>Untuk membaca buku gratis, Anda cukup membuka rak. Akun member diperlukan untuk menerbitkan buku, membuka buku berbayar, dan mengelola profil penulis.</p></details>
+      <details><summary>Bagaimana cara membeli buku berbayar?</summary><p>Masuk dengan akun, tekan tombol beli pada halaman buku, lalu konfirmasi lewat WhatsApp admin. Setelah pembayaran diverifikasi, akses dibuka pada akun yang sama.</p></details>
+      <details><summary>Bolehkah saya menyumbangkan tulisan secara gratis?</summary><p>Tentu. Pilih tipe akses Gratis saat mengunggah. Anda tetap mendapat halaman profil penulis dan dapat memantau jumlah pembaca di dasbor.</p></details>
+      <details><summary>Bagaimana jika saya ingin menjual buku saya?</summary><p>Pilih tipe Berbayar dan isi harga. Bab 1 otomatis menjadi pratinjau. Untuk hal-hal seperti mekanisme penyaluran hasil penjualan, silakan bicarakan langsung dengan admin lewat WhatsApp.</p></details>
+      <details><summary>Boleh mengunggah buku karya orang lain?</summary><p>Hanya bila Anda mendapat izin pemegang hak, atau karya tersebut berstatus domain publik atau berlisensi terbuka. Karya yang melanggar hak cipta dapat diturunkan oleh admin.</p></details>
+      <details><summary>Saya kesulitan mengunggah. Ke mana bertanya?</summary><p>Hubungi admin lewat tombol WhatsApp di halaman ini atau lewat email yang tertera di bagian bawah. Tim siap membantu soal format dokumen dan pendaftaran.</p></details>
+    </div>
+  </div>
+</section>
+
+<section style="padding-bottom:0">
+  <div class="wrap">
+    <div class="final rv">
+      <h2>Rak buku Anda sudah menunggu.</h2>
+      <p>Masuk dan temukan bacaan berikutnya, atau jadilah penulis pertama yang mengisi rak dengan karya Anda.</p>
+      <div class="cta-row">
+        <a class="btn btn-p" data-main data-catalog href="dashboard.html">Jelajahi Koleksi →</a>
+        <a class="btn btn-o" data-catalog-upload href="dashboard.html">✍️ Terbitkan Tulisan</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap f-in">
+    <div>© <span id="yr"></span> Katalog WebBook Kaffahmedia. Seluruh hak cipta buku tetap milik penulis atau pemegang hak masing-masing.</div>
+    <div class="f-links">
+      <a data-catalog href="dashboard.html">Rak Buku</a>
+      <a data-wa href="#">WhatsApp Admin</a>
+      <a href="mailto:yanaroyana462@gmail.com">yanaroyana462@gmail.com</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ===== Atur tautan di sini =====
+  // Halaman katalog (aplikasi yang sudah ada). Jika katalog tetap di index.html, ubah ke 'index.html'.
+  const CATALOG_URL = 'dashboard.html';
+  const ADMIN_WA = '6285794506290';
+
+  document.querySelectorAll('[data-catalog]').forEach(a => a.href = CATALOG_URL);
+  document.querySelectorAll('[data-catalog-upload]').forEach(a => a.href = CATALOG_URL + '?aksi=unggah');
+  const waMsg = 'Halo Admin Katalog WebBook, saya tertarik menyumbangkan/menerbitkan tulisan. Mohon panduannya.';
+  document.querySelectorAll('[data-wa]').forEach(a => {
+    a.href = 'https://wa.me/' + ADMIN_WA + '?text=' + encodeURIComponent(waMsg);
+    a.target = '_blank'; a.rel = 'noopener noreferrer';
+  });
+
+  // Pengunjung yang sudah login: ubah teks tombol utama
+  let loggedIn = false;
+  try {
+    const k = Object.keys(localStorage).find(k => /^sb-.*-auth-token$/.test(k));
+    if (k) { const ss = JSON.parse(localStorage.getItem(k)); loggedIn = !!(ss && (ss.refresh_token || (ss.access_token && ss.expires_at * 1000 > Date.now()))); }
+  } catch (e) {}
+  if (loggedIn) {
+    document.querySelectorAll('[data-main]').forEach(el => el.textContent = 'Lanjut ke Rak Saya →');
+    document.querySelectorAll('[data-upload-main]').forEach(el => el.textContent = 'Unggah Buku Baru →');
+  }
+  document.getElementById('yr').textContent = new Date().getFullYear();
+
+  // Tema (memakai kunci 'theme' yang sama dengan portal)
+  const root = document.documentElement, btn = document.getElementById('themeBtn');
+  function applyTheme(t){ root.setAttribute('data-theme', t); btn.textContent = t === 'dark' ? '☀️' : '🌙'; }
+  let saved = null; try { saved = localStorage.getItem('theme'); } catch(e){}
+  applyTheme(saved || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+  btn.addEventListener('click', () => {
+    const t = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    applyTheme(t); try { localStorage.setItem('theme', t); } catch(e){}
+  });
+
+  // Animasi muncul saat scroll
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .12 });
+  document.querySelectorAll('.rv').forEach(el => io.observe(el));
+</script>
+</body>
+</html>
