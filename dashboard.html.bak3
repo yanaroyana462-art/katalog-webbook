@@ -24,12 +24,12 @@
   <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
   <!-- PDF-Lib untuk Stamping Watermark Dinamis -->
   <!-- Engine Logika Aplikasi -->
-  <script defer src="script.js?v=2.10"></script>
+  <script defer src="script.js?v=2.12"></script>
   <!-- Alpine.js Collapse Plugin (Wajib dimuat sebelum Alpine Core) -->
   <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
   <!-- Alpine.js -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <link rel="stylesheet" href="tailwind.css?v=9" />
+  <link rel="stylesheet" href="tailwind.css?v=12" />
   <script defer src="https://cloud.umami.is/script.js" data-website-id="f06bcb2f-20c3-4329-9eb8-5ac5daea37b2"></script>
   <!-- Custom Stylesheet -->
   <link rel="stylesheet" href="style.css" />
@@ -281,7 +281,7 @@
 
     <!-- GRID BUKU HASIL FILTER -->
     <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5" x-show="filteredBooks.length > 0">
-      <template x-for="(book, index) in filteredBooks" :key="book.id">
+      <template x-for="(book, index) in pagedBooks" :key="book.id">
         <div class="bg-gradient-to-b from-white via-[#faf9f6]/80 to-[#f5f2eb]/70 dark:from-slate-900 dark:to-slate-950 border border-stone-200/90 dark:border-slate-800 rounded-2xl overflow-hidden hover:border-amber-400/80 dark:hover:border-indigo-500/50 hover:shadow-[0_16px_35px_-8px_rgba(120,90,40,0.12)] dark:hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 group flex flex-col justify-between">
           
           <div>
@@ -371,6 +371,28 @@
       </template>
     </div>
 
+    <!-- Navigasi Halaman -->
+    <nav x-show="totalPages > 1" class="mt-8 flex items-center justify-center gap-1.5 flex-wrap" aria-label="Navigasi halaman">
+      <button type="button" @click="goToPage(currentPage - 1)" :disabled="currentPage === 1"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-stone-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-stone-700 dark:text-slate-200 disabled:opacity-40 hover:bg-stone-50 dark:hover:bg-slate-700 transition">
+        &larr; Sebelumnya
+      </button>
+
+      <template x-for="(p, i) in pageNumbers" :key="i">
+        <button type="button" @click="p !== '...' && goToPage(p)" :disabled="p === '...'"
+              class="min-w-[2rem] px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition"
+              :class="p === currentPage
+                ? 'bg-indigo-600 border-indigo-600 text-white'
+                : 'bg-white dark:bg-slate-800 border-stone-200 dark:border-slate-700 text-stone-700 dark:text-slate-200 hover:bg-stone-50 dark:hover:bg-slate-700'"
+              x-text="p"></button>
+      </template>
+
+      <button type="button" @click="goToPage(currentPage + 1)" :disabled="currentPage === totalPages"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-stone-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-stone-700 dark:text-slate-200 disabled:opacity-40 hover:bg-stone-50 dark:hover:bg-slate-700 transition">
+        Berikutnya &rarr;
+      </button>
+    </nav>
+
     <!-- Tampilan Jika Buku Tidak Ditemukan -->
     <div x-show="filteredBooks.length === 0" class="text-center py-16 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
       <svg class="w-12 h-12 text-slate-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
@@ -393,19 +415,6 @@
         ❤️ Dukung Pustaka WebBook dengan Donasi
       </button>
     </div>
-<template x-if="isAdmin">
-      <div class="mt-12 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2">
-            📊 Analitik Pengunjung Katalog (Umami)
-          </h3>
-          <span class="text-[10px] bg-indigo-100 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full font-medium">Akses Khusus Admin</span>
-        </div>
-        <div class="w-full h-[550px] overflow-hidden rounded-xl border border-slate-100 dark:border-slate-800">
-          <iframe src="https://cloud.umami.is/share/VBJqeQVpwGITovJh?theme=dark" class="w-full h-full border-0" loading="lazy"></iframe>
-        </div>
-      </div>
-    </template>
   </main>
 
   <!-- ========================================== -->
@@ -1217,7 +1226,7 @@
               </button>
             </template>
             <button @click="if (activeBook?.fileUrl || activeBook?.file_url) { readerTab = 'document'; stopTTS(); loadSignedUrlForActiveBook(); } else if (activeBook?.external_link) { readerTab = 'external'; stopTTS(); } else { startReading(0); }" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs md:text-sm font-semibold shadow-md shadow-indigo-600/30 transition flex items-center justify-center gap-2 text-center">
-              <span x-text="activeBook?.accessType === 'Berbayar' && !purchasedBookIds.includes(activeBook?.id) ? 'Baca Pratinjau (Bab 1)' : 'Mulai Baca Bab 1'"></span>
+              <span x-text="activeBook?.accessType === 'Berbayar' && !purchasedBookIds.includes(activeBook?.id) ? 'Baca Pratinjau' : 'Mulai Membaca'"></span>
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
             </button>
             <button @click="shareBook(activeBook)" class="px-4 py-2.5 bg-stone-100 hover:bg-stone-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-200 rounded-xl text-xs md:text-sm font-semibold border border-stone-200 dark:border-slate-700 transition flex items-center justify-center gap-2 text-center" title="Bagikan Buku">
@@ -1511,7 +1520,7 @@
               <div class="flex items-start gap-2 min-w-0">
                 <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] flex-shrink-0"
                       :class="readerTab === 'text' && currentChapterIndex === idx ? 'bg-indigo-600 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'"
-                      x-text="isSubchapter(chapter) ? getChapterSubchapter(chapter).subchapterIndex : getChapterLabel(chapter, idx).replace('Bab ', '')"></span>
+                      x-text="getChapterBadge(chapter, idx)"></span>
                     <span class="truncate leading-5" :class="isSubchapter(chapter) ? 'pl-2 text-[11px]' : ''" x-text="`${getChapterLabel(chapter, idx)}: ${getChapterDisplayTitle(chapter)}`"></span>
               </div>
               <span x-show="activeBook?.accessType === 'Berbayar' && !purchasedBookIds.includes(activeBook?.id) && idx > 0" class="text-amber-500 flex-shrink-0">
