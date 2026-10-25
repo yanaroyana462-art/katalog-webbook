@@ -274,6 +274,7 @@ function portalEngine() {
               accessType: item.access_type || 'Gratis',
               price: item.price || 0,
               isPrivate: Boolean(item.is_private),
+              isDraft: Boolean(item.is_draft),
               coverUrl: item.cover_url || '',
               fileName: item.file_name || null,
               external_link: item.external_link || null,
@@ -339,7 +340,7 @@ function portalEngine() {
       // Filter rak: sembunyikan kategori yang belum punya buku terlihat
       const visible = new Set(
         this.catalog
-          .filter(b => !b.isPrivate || (this.currentUser && b.userId === this.currentUser.id))
+          .filter(b => !b.isDraft && (!b.isPrivate || (this.currentUser && b.userId === this.currentUser.id)))
           .map(b => b.category)
       );
       return ['Semua', ...this.categories.slice(1).filter(c => visible.has(c) || c === this.selectedCategory)];
@@ -351,11 +352,11 @@ function portalEngine() {
 
     get floatingBooks() {
       const q = this.floatingBookSearch ? this.floatingBookSearch.toLowerCase().trim() : '';
-      return this.catalog.filter(b => !q || b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q));
+      return this.catalog.filter(b => !b.isDraft && (!q || b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q)));
     },
 
     get authorList() {
-      return [...new Set(this.catalog.map(b => b.author))].sort();
+      return [...new Set(this.catalog.filter(b => !b.isDraft && b.author).map(b => b.author))].sort();
     },
 
     async handleAuth() {
@@ -721,6 +722,7 @@ function portalEngine() {
    get filteredBooks() {
      return this.catalog.filter(book => {
        if (book.isPrivate && (!this.currentUser || book.userId !== this.currentUser.id)) return false;
+       if (book.isDraft && (this.scopeFilter !== 'my-books' || !this.currentUser || book.userId !== this.currentUser.id)) return false;
 
        if (this.scopeFilter === 'my-books') {
          if (!this.currentUser || book.userId !== this.currentUser.id) return false;
@@ -943,8 +945,11 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
      return data?.publicUrl || '';
    },
 
-   async saveNewBook() {
-     if (!this.uploadForm.rightsAccepted || !this.uploadForm.rightsType) {
+   async saveNewBook(asDraft = false) {
+     if (asDraft) {
+       if (!this.currentUser) { this.showToast('Masuk dulu untuk menyimpan draft.', 'error'); return; }
+       if (!this.uploadForm.title.trim()) { this.showToast('Isi judul buku dulu sebelum menyimpan draft.', 'error'); return; }
+     } else if (!this.uploadForm.rightsAccepted || !this.uploadForm.rightsType) {
        this.showToast('Pilih dasar hak dan setujui pernyataan hak cipta sebelum menyimpan buku.', 'error');
        return;
      }
@@ -1000,7 +1005,7 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
        ];
      });
      let formattedChapters = [...preliminaryChapters, ...formattedUserChapters, ...concludingChapters];
-     if (formattedChapters.length === 0) {
+     if (formattedChapters.length === 0 && !asDraft) {
        formattedChapters = [{
          title: `Bab 1: Pengantar ${this.uploadForm.title.trim() || 'Materi'}`,
          content: `<p>${this.uploadForm.blurb.trim()}</p><p class="text-xs text-slate-500 mt-4 italic">Dokumen terlampir: ${this.uploadForm.fileName || 'Tidak ada file fisik'}</p>`
@@ -1053,6 +1058,7 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
              external_link: this.uploadForm.external_link?.trim() || null,
              file_url: this.uploadForm.fileUrl || fileUrlToSave,
              file_name: this.uploadForm.fileName || null,
+             is_draft: Boolean(asDraft),
              ...this.getBookMetadataPayload(this.uploadForm)
            };
 
@@ -1103,6 +1109,9 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
          this.catalog[bookIdx].external_link = this.uploadForm.external_link;
          this.catalog[bookIdx].fileUrl = this.uploadForm.fileUrl;
          this.catalog[bookIdx].fileName = this.uploadForm.fileName;
+         this.catalog[bookIdx].isDraft = Boolean(asDraft);
+         this.showToast(asDraft ? 'Draft diperbarui.' : 'Perubahan tersimpan.', 'success');
+         if (asDraft) this.scopeFilter = 'my-books';
        }
        this.cancelEditMode();
        this.goToCatalog();
@@ -1119,6 +1128,7 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
 
      const newBook = {
        id: 'book-' + Date.now(),
+       isDraft: Boolean(asDraft),
        userId: this.currentUser?.id || null,
        title: this.uploadForm.title.trim(),
        author: this.uploadForm.author.trim(),
@@ -1191,6 +1201,7 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
          };
 
          if (this.currentUser?.id) bookPayload.user_id = this.currentUser.id;
+         bookPayload.is_draft = Boolean(asDraft);
          if (newBook.external_link) bookPayload.external_link = newBook.external_link;
          if (newBook.fileUrl) bookPayload.file_url = newBook.fileUrl;
          if (newBook.fileName) bookPayload.file_name = newBook.fileName;
@@ -1243,6 +1254,8 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
      }
 
      this.catalog.unshift(newBook);
+     if (asDraft) { this.scopeFilter = 'my-books'; this.showToast('Draft tersimpan. Lanjutkan kapan saja lewat tab Buku Saya.', 'success'); }
+     else { this.showToast('Buku berhasil diterbitkan.', 'success'); }
      this.clearFile();
      this.uploadForm.title = '';
     this.uploadForm.publisher = '';
@@ -2170,6 +2183,24 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
      this.isPaymentModalOpen = false;
      this.checkoutBook = null;
      this.showToast('Permintaan dikirim. Akses buku aktif setelah pembayaran diverifikasi admin.', 'info');
+   },
+
+   get isEditingDraft() {
+     return Boolean(this.isEditingId && this.catalog.find(b => b.id === this.isEditingId)?.isDraft);
+   },
+
+   formatDate(d) {
+     if (!d) return '';
+     const s = String(d);
+     const dt = new Date(s.length <= 10 ? s + 'T00:00:00' : s);
+     if (isNaN(dt)) return '';
+     return dt.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+   },
+
+   isNewBook(book) {
+     if (!book || book.isDraft || !book.createdAt) return false;
+     const dt = new Date(book.createdAt + 'T00:00:00');
+     return !isNaN(dt) && (Date.now() - dt.getTime()) < 30 * 24 * 60 * 60 * 1000;
    },
 
    formatCurrency(amount) {
