@@ -176,7 +176,7 @@ function portalEngine() {
     },
 
     // Daftar Kategori Dinamis
-    categories: ['Semua', 'Teknologi & AI', 'Edukasi & Parenting', 'Bisnis & SOP', 'Agama & Pemikiran'],
+    categories: ['Semua', 'Teknologi & AI', 'Edukasi & Parenting', 'Bisnis & SOP', 'Agama & Pemikiran', 'Pengembangan Diri & Komunikasi', 'Fiksi & Sastra', 'Kesehatan & Gaya Hidup', 'Sejarah', 'Politik', 'Ekonomi'],
 
     init() {
       ['searchQuery', 'selectedCategory', 'selectedAccess', 'selectedAuthor', 'scopeFilter', 'sortBy']
@@ -333,6 +333,16 @@ function portalEngine() {
       } else {
         document.documentElement.classList.remove('dark');
       }
+    },
+
+    get filterCategories() {
+      // Filter rak: sembunyikan kategori yang belum punya buku terlihat
+      const visible = new Set(
+        this.catalog
+          .filter(b => !b.isPrivate || (this.currentUser && b.userId === this.currentUser.id))
+          .map(b => b.category)
+      );
+      return ['Semua', ...this.categories.slice(1).filter(c => visible.has(c) || c === this.selectedCategory)];
     },
 
     get availableCategories() {
