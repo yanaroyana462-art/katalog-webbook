@@ -9,6 +9,14 @@ function portalEngine() {
   return {
     currentView: 'catalog', // 'catalog' | 'upload'
     isGrantModalOpen: false,
+    authorStatus: null, // null = memuat | 'none' | 'pending' | 'approved' | 'rejected'
+    authorNote: '',
+    authorApplyForm: { fullName: '', whatsapp: '', bio: '', sampleUrl: '', plan: '', agree: false },
+    isSubmittingApplication: false,
+    isReviewModalOpen: false,
+    reviewLoading: false,
+    reviewApplications: [],
+    reviewNotes: {},
     isGranting: false,
     grantEmail: '',
     grantBookId: '',
@@ -69,6 +77,14 @@ function portalEngine() {
 
     get book() {
       return this.activeBook;
+    },
+
+    get isApprovedAuthor() {
+      return this.isAdmin || this.authorStatus === 'approved';
+    },
+
+    get pendingApplicationsCount() {
+      return this.reviewApplications.filter(a => a.status === 'pending').length;
     },
 
     get isAdmin() {
@@ -214,6 +230,7 @@ function portalEngine() {
           this.currentUser = session?.user || null;
           if (this.currentUser) {
             this.fetchUserPurchases();
+            this.fetchAuthorStatus();
             this.loadAuthorProfile();
           }
         });
@@ -222,6 +239,7 @@ function portalEngine() {
           this.currentUser = session?.user || null;
           if (this.currentUser) {
             this.fetchUserPurchases();
+            this.fetchAuthorStatus();
             this.loadAuthorProfile();
           }
         });
@@ -306,6 +324,92 @@ function portalEngine() {
         }
       } catch (err) {
         console.error('Gagal mengambil data dari Supabase:', err.message);
+      }
+    },
+
+    async fetchAuthorStatus() {
+      if (!this.supabaseClient || !this.currentUser) { this.authorStatus = null; return; }
+      try {
+        const { data, error } = await this.supabaseClient
+          .from('author_applications')
+          .select('status, admin_note')
+          .eq('user_id', this.currentUser.id)
+          .maybeSingle();
+        if (error) throw error;
+        this.authorStatus = data ? data.status : 'none';
+        this.authorNote = data?.admin_note || '';
+      } catch (err) {
+        console.warn('Gagal memuat status penulis:', err);
+        this.authorStatus = 'none';
+      }
+      if (this.isAdmin) this.loadApplications(true);
+    },
+
+    async submitAuthorApplication() {
+      const f = this.authorApplyForm;
+      if (!f.fullName.trim() || f.bio.trim().length < 20) {
+        this.showToast('Lengkapi nama dan latar belakang (minimal 20 karakter).', 'error');
+        return;
+      }
+      if (!f.agree) {
+        this.showToast('Setujui pernyataan hak cipta dulu.', 'error');
+        return;
+      }
+      this.isSubmittingApplication = true;
+      try {
+        const { data, error } = await this.supabaseClient.rpc('submit_author_application', {
+          p_full_name: f.fullName.trim(),
+          p_whatsapp: f.whatsapp.trim(),
+          p_bio: f.bio.trim(),
+          p_sample_url: this.safeUrl(f.sampleUrl),
+          p_plan: f.plan.trim()
+        });
+        if (error) throw error;
+        await this.fetchAuthorStatus();
+        this.showToast(data === 'ALREADY_APPROVED' ? 'Akun Anda sudah disetujui.' : 'Pengajuan terkirim. Admin akan meninjaunya.', 'success');
+      } catch (err) {
+        this.showToast('Gagal mengirim pengajuan: ' + (err.message || err), 'error');
+      } finally {
+        this.isSubmittingApplication = false;
+      }
+    },
+
+    async openReviewModal() {
+      this.isReviewModalOpen = true;
+      await this.loadApplications();
+    },
+
+    closeReviewModal() {
+      this.isReviewModalOpen = false;
+    },
+
+    async loadApplications(silent = false) {
+      if (!this.isAdmin || !this.supabaseClient) return;
+      if (!silent) this.reviewLoading = true;
+      try {
+        const { data, error } = await this.supabaseClient.rpc('admin_list_author_applications');
+        if (error) throw error;
+        this.reviewApplications = data || [];
+      } catch (err) {
+        if (!silent) this.showToast('Gagal memuat pengajuan: ' + (err.message || err), 'error');
+      } finally {
+        this.reviewLoading = false;
+      }
+    },
+
+    async reviewApplication(app, status) {
+      if (!this.isAdmin) return;
+      try {
+        const { error } = await this.supabaseClient.rpc('admin_review_author', {
+          p_user: app.user_id,
+          p_status: status,
+          p_note: this.reviewNotes[app.user_id] || ''
+        });
+        if (error) throw error;
+        this.showToast(status === 'approved' ? `${app.email} disetujui sebagai penulis.` : `${app.email} ditolak atau izinnya dicabut.`, 'success');
+        await this.loadApplications();
+      } catch (err) {
+        this.showToast('Gagal menyimpan keputusan: ' + (err.message || err), 'error');
       }
     },
 
@@ -411,6 +515,10 @@ function portalEngine() {
       this.activeBookSignedUrl = '';
       localStorage.removeItem('purchasedBookIds');
       this.clearAuthorProfileFromForm();
+      this.authorStatus = null;
+      this.authorNote = '';
+      this.reviewApplications = [];
+      this.isReviewModalOpen = false;
       await this.fetchBooks();
     },
 
