@@ -24,15 +24,69 @@
   <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
   <!-- PDF-Lib untuk Stamping Watermark Dinamis -->
   <!-- Engine Logika Aplikasi -->
-  <script defer src="script.js?v=2.12"></script>
+  <script defer src="script.js?v=2.16"></script>
   <!-- Alpine.js Collapse Plugin (Wajib dimuat sebelum Alpine Core) -->
   <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
   <!-- Alpine.js -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <link rel="stylesheet" href="tailwind.css?v=12" />
+  <link rel="stylesheet" href="tailwind.css?v=14" />
   <script defer src="https://cloud.umami.is/script.js" data-website-id="f06bcb2f-20c3-4329-9eb8-5ac5daea37b2"></script>
   <!-- Custom Stylesheet -->
   <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Rak buku: flex, kartu rata tinggi, sampul utuh */
+    .book-grid { display: flex; flex-wrap: wrap; gap: .75rem; }
+    .book-card { flex: 1 1 calc(50% - .375rem); max-width: calc(50% - .375rem); min-width: 0; }
+    @media (min-width: 640px) {
+      .book-grid { gap: 1.25rem; }
+      .book-card { flex-basis: calc(33.333% - .84rem); max-width: calc(33.333% - .84rem); }
+    }
+    @media (min-width: 1280px) {
+      .book-card { flex-basis: calc(25% - .95rem); max-width: calc(25% - .95rem); }
+    }
+    .book-cover { display: flex; flex-direction: column; }
+    .book-img { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: contain; background-color: #f1efe9; }
+    .dark .book-img { background-color: #0f172a; }
+    .book-badges { display: flex; flex-wrap: wrap; gap: .25rem; padding: .5rem .5rem 0; }
+    .book-badges > div { display: flex; flex-wrap: wrap; gap: .25rem; }
+    .book-actions { flex-wrap: wrap; }
+    @media (max-width: 639px) {
+      .book-read { flex: 1 1 100%; justify-content: center; padding-top: .5rem; padding-bottom: .5rem; }
+    }
+  </style>
+<style>
+    .pw-card{background:#fff;color:#0f172a;border:1px solid #e2e8f0;border-radius:1rem;padding:1.5rem;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+    .dark .pw-card{background:#0f172a;color:#e2e8f0;border-color:#1e293b}
+    .pw-title{font-size:1.125rem;font-weight:700;margin:0}
+    .pw-sub{font-size:.75rem;color:#64748b;margin:.35rem 0 0;line-height:1.5}
+    .dark .pw-sub{color:#94a3b8}
+    .pw-text{font-size:.8rem;margin:.5rem 0 0;line-height:1.55;white-space:pre-line}
+    .pw-label{display:block;font-size:.75rem;font-weight:600;margin:.9rem 0 .35rem}
+    .pw-input{width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:.75rem;padding:.55rem .8rem;font-size:.8rem;background:#fff;color:#0f172a}
+    .dark .pw-input{background:#020617;border-color:#334155;color:#f1f5f9}
+    .pw-check{display:flex;gap:.55rem;align-items:flex-start;font-size:.75rem;line-height:1.5;margin-top:1rem;cursor:pointer}
+    .pw-link{border:0;background:none;padding:0;font-size:inherit;color:#4f46e5;text-decoration:underline;cursor:pointer}
+    .dark .pw-link{color:#a5b4fc}
+    .pw-btn{border:0;border-radius:.75rem;padding:.6rem 1.1rem;font-size:.8rem;font-weight:600;cursor:pointer;background:#4f46e5;color:#fff;margin-top:1rem}
+    .pw-btn:disabled{opacity:.6;cursor:default}
+    .pw-btn-ghost{background:#f1f5f9;color:#334155;margin-top:0}
+    .dark .pw-btn-ghost{background:#1e293b;color:#e2e8f0}
+    .pw-btn-ok{background:#059669;margin-top:.6rem}
+    .pw-btn-no{background:#e11d48;margin-top:.6rem}
+    .pw-note{font-size:.75rem;line-height:1.5;border-radius:.75rem;padding:.7rem .9rem;margin-top:.9rem;background:#fffbeb;border:1px solid #fde68a;color:#92400e}
+    .dark .pw-note{background:rgba(120,53,15,.25);border-color:#78350f;color:#fde68a}
+    .pw-item{border:1px solid #e2e8f0;border-radius:.75rem;padding:.9rem;margin-top:.9rem}
+    .dark .pw-item{border-color:#334155}
+    .pw-chip{font-size:.65rem;font-weight:700;border-radius:9999px;padding:.15rem .6rem;background:#e2e8f0;color:#334155}
+    .pw-chip-pending{background:#fef3c7;color:#92400e}
+    .pw-chip-approved{background:#d1fae5;color:#065f46}
+    .pw-chip-rejected{background:#ffe4e6;color:#9f1239}
+    .pw-modal-bg{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:1rem}
+    .pw-modal{width:100%;max-width:640px;max-height:88vh;overflow:auto}
+    .pw-fab{position:fixed;left:16px;bottom:64px;z-index:60;background:#4f46e5;color:#fff;border:0;border-radius:9999px;padding:10px 16px;font-size:13px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.3);cursor:pointer}
+    .pw-count{margin-left:6px;background:#fff;color:#4f46e5;border-radius:9999px;padding:0 7px;font-size:11px;font-weight:700}
+    .pw-badge-new{font-size:10px;font-weight:600;background:#4f46e5;color:#fff;border:1px solid #818cf8;padding:2px 8px;border-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,.1)}
+  </style>
 </head>
 <body class="bg-gradient-to-br from-[#faf8f5] via-[#f7f4ee] to-[#f0ece1] text-stone-800 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 dark:text-slate-100 font-sans antialiased min-h-screen selection:bg-indigo-600 selection:text-white transition-colors duration-300 relative overflow-x-hidden" x-data="portalEngine()">
 
@@ -92,14 +146,14 @@
           <!-- Ikon Matahari (Saat Mode Gelap) -->
           <svg x-show="darkMode" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 9H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
         </button>
-        <template x-if="currentUser">
+        <template x-if="currentUser && isApprovedAuthor">
           <button @click="openDashboard()" type="button"
                   class="px-2.5 sm:px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-stone-50 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-200 border border-stone-200 dark:border-slate-700 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
             <svg class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
             <span class="hidden sm:inline">Dasbor</span>
           </button>
         </template>
-        <template x-if="currentUser">
+        <template x-if="currentUser && isApprovedAuthor">
           <button @click="openProfileModal()" type="button" 
                   class="px-2.5 sm:px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-stone-50 dark:hover:bg-slate-700 text-stone-700 dark:text-slate-200 border border-stone-200 dark:border-slate-700 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
             <svg class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
@@ -204,7 +258,7 @@
         <div>
           <label class="block text-[11px] font-semibold text-stone-500 dark:text-slate-400 mb-1">Kategori:</label>
           <select x-model="selectedCategory" class="w-full bg-stone-50 dark:bg-slate-800 border border-stone-200 dark:border-slate-700 text-xs text-stone-800 dark:text-slate-200 rounded-lg px-2 py-2 focus:outline-none focus:border-indigo-500 truncate">
-            <template x-for="cat in categories" :key="cat">
+            <template x-for="cat in filterCategories" :key="cat">
               <option :value="cat" x-text="cat"></option>
             </template>
           </select>
@@ -222,7 +276,7 @@
       <!-- Filter Kategori (Buttons) untuk Tablet / Desktop -->
       <div class="hidden sm:flex items-center gap-2 overflow-x-auto pb-1 pt-1 no-scrollbar">
         <span class="text-xs font-semibold text-stone-500 dark:text-slate-400 mr-1 whitespace-nowrap">Kategori:</span>
-        <template x-for="cat in categories" :key="cat">
+        <template x-for="cat in filterCategories" :key="cat">
           <button @click="selectedCategory = cat" 
                   class="px-3.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all border"
                   :class="selectedCategory === cat ? 'bg-stone-900 border-stone-900 text-white dark:bg-indigo-600 dark:border-indigo-600 shadow-sm font-semibold' : 'bg-[#faf8f5] dark:bg-slate-800/80 border-stone-200/90 dark:border-slate-700 text-stone-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 hover:text-stone-900 dark:hover:text-white hover:border-stone-300 dark:hover:border-slate-600'">
@@ -265,7 +319,7 @@
       <!-- Ringkasan Filter & Urutan -->
       <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800">
         <div class="font-medium">
-          Menampilkan <span class="text-indigo-600 dark:text-indigo-400 font-bold" x-text="filteredBooks.length"></span> dari <span class="text-slate-700 dark:text-slate-300 font-semibold" x-text="catalog.length"></span> buku
+          Menampilkan <span class="text-indigo-600 dark:text-indigo-400 font-bold" x-text="filteredBooks.length"></span> dari <span class="text-slate-700 dark:text-slate-300 font-semibold" x-text="catalog.filter(b => !b.isDraft).length"></span> buku
         </div>
         <div class="flex items-center gap-2">
           <span>Urutkan:</span>
@@ -280,25 +334,25 @@
     </div>
 
     <!-- GRID BUKU HASIL FILTER -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5" x-show="filteredBooks.length > 0">
+    <div class="book-grid" x-show="filteredBooks.length > 0">
       <template x-for="(book, index) in pagedBooks" :key="book.id">
-        <div class="bg-gradient-to-b from-white via-[#faf9f6]/80 to-[#f5f2eb]/70 dark:from-slate-900 dark:to-slate-950 border border-stone-200/90 dark:border-slate-800 rounded-2xl overflow-hidden hover:border-amber-400/80 dark:hover:border-indigo-500/50 hover:shadow-[0_16px_35px_-8px_rgba(120,90,40,0.12)] dark:hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 group flex flex-col justify-between">
+        <div class="book-card bg-gradient-to-b from-white via-[#faf9f6]/80 to-[#f5f2eb]/70 dark:from-slate-900 dark:to-slate-950 border border-stone-200/90 dark:border-slate-800 rounded-2xl overflow-hidden hover:border-amber-400/80 dark:hover:border-indigo-500/50 hover:shadow-[0_16px_35px_-8px_rgba(120,90,40,0.12)] dark:hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 group flex flex-col justify-between">
           
           <div>
             <!-- Sampul Buku (Cover Image) -->
-            <div class="relative h-44 w-full overflow-hidden bg-slate-100 dark:bg-slate-800 cursor-pointer" @click="handleBookClick(book)">
+            <div class="book-cover relative w-full bg-slate-100 dark:bg-slate-800 cursor-pointer" @click="handleBookClick(book)">
               <template x-if="book.coverUrl">
-                <img :loading="index < 2 ? 'eager' : 'lazy'" :fetchpriority="index < 2 ? 'high' : 'auto'" :src="book.coverUrl" :alt="book.title" decoding="async" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out" />
+                <img :loading="index < 2 ? 'eager' : 'lazy'" :fetchpriority="index < 2 ? 'high' : 'auto'" :src="book.coverUrl" :alt="book.title" decoding="async" class="book-img" />
               </template>
               <template x-if="!book.coverUrl">
-                <div class="w-full h-full bg-gradient-to-tr from-indigo-500 to-violet-600 flex items-center justify-center text-white/40">
+                <div class="book-img bg-gradient-to-tr from-indigo-500 to-violet-600 flex items-center justify-center text-white/40">
                   <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
                 </div>
               </template>
-              <div class="absolute inset-0 bg-gradient-to-t from-slate-900/30 via-transparent to-transparent"></div>
+              
               
               <!-- Label Kategori & Privasi di Atas Sampul -->
-              <div class="absolute top-3 left-3 right-3 flex items-center justify-between">
+              <div class="book-badges">
                 <span class="text-[11px] font-semibold tracking-wide px-2.5 py-1 rounded-md bg-white/90 dark:bg-slate-900/90 backdrop-blur-md text-indigo-700 dark:text-indigo-300 border border-white/60 dark:border-slate-700/60 shadow-sm" x-text="book.category"></span>
                 <div class="flex items-center gap-1.5">
                   <span x-show="purchasedBookIds.includes(book.id)" class="text-[10px] bg-emerald-600/95 text-white border border-emerald-400 px-2 py-0.5 rounded font-semibold shadow-sm backdrop-blur-md flex items-center gap-1">
@@ -311,6 +365,8 @@
                           'bg-amber-500/95 text-white border-amber-400': book.accessType === 'Semi Berbayar',
                           'bg-blue-600/95 text-white border-blue-500': book.accessType === 'Berbayar'
                         }" x-text="book.accessType"></span>
+                  <span x-show="book.isDraft" class="text-[10px] bg-amber-500/95 text-white border border-amber-400 px-2 py-0.5 rounded font-semibold shadow-sm">Draft</span>
+                  <span x-show="isNewBook(book)" class="pw-badge-new">Baru</span>
                   <span x-show="book.isPrivate" class="text-[10px] bg-slate-800/95 text-slate-200 px-2 py-0.5 rounded font-medium shadow-sm border border-slate-700">Internal</span>
                 </div>
               </div>
@@ -331,7 +387,7 @@
 
           <div class="px-3 py-3 sm:px-5 sm:py-3.5 bg-[#fbf9f5] dark:bg-slate-950/60 border-t border-stone-200/70 dark:border-slate-800 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
             <div>
-              <span class="text-[11px] text-stone-500 dark:text-slate-400 block" x-text="`${book.chapters.length} Materi`"></span>
+              <span class="text-[11px] text-stone-500 dark:text-slate-400 block" x-text="`${book.chapters.length} Materi · ${formatDate(book.createdAt)}`"></span>
               <template x-if="book.accessType === 'Berbayar'">
                 <div>
                   <span x-show="!purchasedBookIds.includes(book.id)" class="text-xs font-bold text-indigo-600 dark:text-indigo-400" x-text="formatCurrency(book.price)"></span>
@@ -340,12 +396,12 @@
               </template>
             </div>
             
-            <div class="flex items-center justify-between gap-1 sm:justify-start sm:gap-2">
+            <div class="book-actions flex items-center justify-between gap-1 sm:justify-start sm:gap-2">
               <!-- Pemilik dapat mengedit; admin juga dapat menghapus buku siapa pun -->
               <template x-if="currentUser && (book.userId === currentUser.id || isAdmin)">
                 <div class="flex items-center gap-1">
                   <template x-if="book.userId === currentUser.id">
-                    <button @click="openEditModal(book)" class="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition" title="Edit Buku Saya">
+                    <button @click="book.isDraft ? (editForm.originalBook = book, editInFullForm()) : openEditModal(book)" class="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition" title="Edit Buku Saya">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                     </button>
                   </template>
@@ -356,12 +412,12 @@
               </template>
 
               <!-- Tombol Bagikan di Kartu Rak -->
-              <button @click.stop="shareBook(book)" class="p-1.5 text-stone-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-stone-100 dark:hover:bg-slate-800 transition" title="Bagikan Buku">
+              <button x-show="!book.isDraft" @click.stop="shareBook(book)" class="p-1.5 text-stone-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-lg hover:bg-stone-100 dark:hover:bg-slate-800 transition" title="Bagikan Buku">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
               </button>
 
-            <button @click="openBook(book)" title="Baca Sekarang" aria-label="Baca Sekarang" class="px-2 sm:px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-sm shadow-indigo-600/20 transition flex items-center gap-1.5">
-              <span class="hidden sm:inline">Baca Sekarang</span>
+            <button @click="openBook(book)" title="Baca Sekarang" aria-label="Baca Sekarang" class="book-read px-2 sm:px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-sm shadow-indigo-600/20 transition flex items-center gap-1.5">
+              <span>Baca Sekarang</span>
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
             </button>
             </div>
@@ -415,19 +471,6 @@
         ❤️ Dukung Pustaka WebBook dengan Donasi
       </button>
     </div>
-<template x-if="isAdmin">
-      <div class="mt-12 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2">
-            📊 Analitik Pengunjung Katalog (Umami)
-          </h3>
-          <span class="text-[10px] bg-indigo-100 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full font-medium">Akses Khusus Admin</span>
-        </div>
-        <div class="w-full h-[550px] overflow-hidden rounded-xl border border-slate-100 dark:border-slate-800">
-          <iframe src="https://cloud.umami.is/share/VBJqeQVpwGITovJh?theme=dark" class="w-full h-full border-0" loading="lazy"></iframe>
-        </div>
-      </div>
-    </template>
   </main>
 
   <!-- ========================================== -->
@@ -528,7 +571,49 @@
     </div>
 
     <!-- Form Unggah (Hanya Tampil Jika Sudah Login) -->
-    <div x-show="currentUser" class="space-y-4">
+    <!-- Pengajuan menjadi penulis (untuk akun yang belum disetujui) -->
+    <div x-show="currentUser && authorStatus !== null && !isApprovedAuthor" x-cloak class="pw-card">
+      <h3 class="pw-title">Ajukan Diri Menjadi Penulis</h3>
+      <p class="pw-sub">Akun Anda sudah terdaftar sebagai pembaca. Untuk menerbitkan buku, ajukan diri sebagai penulis. Admin akan meninjau pengajuan Anda.</p>
+
+      <div x-show="authorStatus === 'pending'" class="pw-note">Pengajuan Anda sedang ditinjau admin. Setelah disetujui, muat ulang halaman ini dan formulir unggah akan terbuka.</div>
+
+      <div x-show="authorStatus === 'rejected'" class="pw-note">
+        Pengajuan sebelumnya belum disetujui.
+        <span x-show="authorNote" x-text="'Catatan admin: ' + authorNote"></span>
+        Anda dapat memperbarui data lalu mengajukan kembali.
+      </div>
+
+      <form x-show="authorStatus === 'none' || authorStatus === 'rejected'" @submit.prevent="submitAuthorApplication()">
+        <label class="pw-label">Nama lengkap / nama pena *</label>
+        <input class="pw-input" type="text" x-model="authorApplyForm.fullName" required maxlength="120" />
+
+        <label class="pw-label">Nomor WhatsApp</label>
+        <input class="pw-input" type="text" x-model="authorApplyForm.whatsapp" maxlength="30" placeholder="08..." />
+
+        <label class="pw-label">Latar belakang dan keahlian * (minimal 20 karakter)</label>
+        <textarea class="pw-input" rows="4" x-model="authorApplyForm.bio" required minlength="20" maxlength="1000" placeholder="Ceritakan singkat siapa Anda dan bidang yang Anda tulis."></textarea>
+
+        <label class="pw-label">Tautan contoh karya (opsional)</label>
+        <input class="pw-input" type="url" x-model="authorApplyForm.sampleUrl" placeholder="https://..." />
+
+        <label class="pw-label">Buku apa yang ingin Anda terbitkan? (opsional)</label>
+        <textarea class="pw-input" rows="2" x-model="authorApplyForm.plan" maxlength="500"></textarea>
+
+        <label class="pw-check">
+          <input type="checkbox" x-model="authorApplyForm.agree" required />
+          <span>Saya hanya akan mengunggah karya sendiri atau karya yang saya miliki izinnya, dan menyetujui
+            <button type="button" class="pw-link" @click="openLegal('terms')">Syarat &amp; Ketentuan</button> serta
+            <button type="button" class="pw-link" @click="openLegal('copyright')">Kebijakan Hak Cipta</button>.</span>
+        </label>
+
+        <p class="pw-sub">Penulis baru menerbitkan buku gratis terlebih dahulu. Buku berbayar ditetapkan oleh admin.</p>
+
+        <button type="submit" class="pw-btn" :disabled="isSubmittingApplication" x-text="isSubmittingApplication ? 'Mengirim...' : 'Kirim Pengajuan'"></button>
+      </form>
+    </div>
+
+    <div x-show="currentUser && isApprovedAuthor" class="space-y-4">
       <!-- Status Akun Login Bar -->
       <div class="bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-900/60 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs">
         <div class="flex items-center gap-2 text-indigo-950 dark:text-indigo-200">
@@ -712,7 +797,7 @@
               <input type="radio" value="Semi Berbayar" x-model="uploadForm.accessType" class="text-indigo-600 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 focus:ring-indigo-500" />
               <span class="ml-1.5">Semi Berbayar</span>
             </label>
-            <label class="inline-flex items-center cursor-pointer text-xs text-slate-700 dark:text-slate-300">
+            <label x-show="isAdmin" class="inline-flex items-center cursor-pointer text-xs text-slate-700 dark:text-slate-300">
               <input type="radio" value="Berbayar" x-model="uploadForm.accessType" class="text-indigo-600 bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-700 focus:ring-indigo-500" />
               <span class="ml-1.5">Berbayar</span>
             </label>
@@ -942,10 +1027,11 @@
       </div>
 
       <!-- Tombol Aksi -->
-      <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+      <div class="flex flex-wrap items-center justify-end gap-2 sm:gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
         <button type="button" @click="goToCatalog()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-lg transition">
           Batal
         </button>
+        <button type="button" x-show="!isEditingId || isEditingDraft" @click="saveNewBook(true)" :disabled="isSaving" class="px-4 py-2 bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/50 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800 disabled:opacity-60 text-xs font-semibold rounded-lg transition">Simpan Draft</button>
         <button type="submit" :disabled="isSaving" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white text-xs font-semibold rounded-lg shadow-md shadow-indigo-600/30 transition flex items-center gap-1.5">
           <template x-if="isSaving">
             <svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
@@ -954,7 +1040,7 @@
             </svg>
           </template>
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-          <span x-text="isSaving ? 'Menyimpan...' : 'Simpan ke Rak Buku'"></span>
+          <span x-text="isSaving ? 'Menyimpan...' : ((!isEditingId || isEditingDraft) ? 'Terbitkan ke Rak Buku' : 'Simpan Perubahan')"></span>
         </button>
       </div>
 
@@ -1142,6 +1228,7 @@
             <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400" x-text="activeBook?.category"></span>
             <h2 class="text-2xl md:text-3xl font-extrabold text-stone-900 dark:text-white mt-1 leading-tight" x-text="activeBook?.title"></h2>
             <p class="text-sm font-medium text-stone-500 dark:text-slate-400 mt-1" x-text="`Penulis: ${activeBook?.author}`"></p>
+            <p class="text-xs text-stone-400 dark:text-slate-500 mt-0.5" x-text="activeBook?.isDraft ? 'Draft (belum diterbitkan)' : `Diterbitkan ${formatDate(activeBook?.createdAt)}`"></p>
           </div>
 
           <div class="py-3 border-y border-stone-200/70 dark:border-slate-800">
@@ -2494,7 +2581,48 @@
     </div>
   </div>
 
-  <!-- Tombol & Modal Beri Akses (khusus admin) -->
+  <!-- Tombol & Modal Tinjau Pengajuan Penulis (khusus admin) -->
+<button x-show="isAdmin" x-cloak type="button" class="pw-fab" @click="openReviewModal()">
+  ✍️ Pengajuan Penulis<span x-show="pendingApplicationsCount > 0" class="pw-count" x-text="pendingApplicationsCount"></span>
+</button>
+
+<div x-show="isReviewModalOpen && isAdmin" x-cloak class="pw-modal-bg" @click.self="closeReviewModal()" @keydown.escape.window="closeReviewModal()">
+  <div class="pw-card pw-modal">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+      <div>
+        <h3 class="pw-title">Pengajuan Penulis</h3>
+        <p class="pw-sub">Setujui untuk memberi izin menerbitkan buku. Tolak atau cabut untuk menutup izin itu.</p>
+      </div>
+      <button type="button" class="pw-btn pw-btn-ghost" @click="closeReviewModal()">Tutup</button>
+    </div>
+
+    <p x-show="reviewLoading" class="pw-sub">Memuat...</p>
+    <p x-show="!reviewLoading && reviewApplications.length === 0" class="pw-sub">Belum ada pengajuan.</p>
+
+    <template x-for="app in reviewApplications" :key="app.user_id">
+      <div class="pw-item">
+        <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center">
+          <strong x-text="app.full_name"></strong>
+          <span class="pw-chip" :class="'pw-chip-' + app.status" x-text="app.status === 'pending' ? 'Menunggu' : (app.status === 'approved' ? 'Disetujui' : 'Ditolak')"></span>
+        </div>
+        <p class="pw-sub" x-text="app.email + ' · ' + new Date(app.created_at).toLocaleDateString('id-ID')"></p>
+        <p class="pw-text" x-text="app.bio"></p>
+        <p class="pw-text" x-show="app.plan" x-text="'Rencana: ' + app.plan"></p>
+        <p class="pw-sub">
+          <a x-show="safeUrl(app.sample_url)" :href="safeUrl(app.sample_url)" target="_blank" rel="noopener noreferrer" class="pw-link">Contoh karya</a>
+          <a x-show="app.whatsapp" :href="formatWhatsappUrl(app.whatsapp)" target="_blank" rel="noopener noreferrer" class="pw-link" style="margin-left:10px">WhatsApp</a>
+        </p>
+        <input class="pw-input" style="margin-top:.6rem" type="text" placeholder="Catatan untuk pengaju (opsional)" x-model="reviewNotes[app.user_id]" />
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button type="button" x-show="app.status !== 'approved'" class="pw-btn pw-btn-ok" @click="reviewApplication(app, 'approved')">Setujui</button>
+          <button type="button" x-show="app.status !== 'rejected'" class="pw-btn pw-btn-no" @click="reviewApplication(app, 'rejected')" x-text="app.status === 'approved' ? 'Cabut izin' : 'Tolak'"></button>
+        </div>
+      </div>
+    </template>
+  </div>
+</div>
+
+<!-- Tombol & Modal Beri Akses (khusus admin) -->
 <button x-show="isAdmin" style="display:none;position:fixed;left:16px;bottom:16px;z-index:60;background:#059669;color:#fff;border:0;border-radius:9999px;padding:10px 16px;font-size:13px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.3);cursor:pointer"
   @click="openGrantModal()">🔑 Beri Akses</button>
 

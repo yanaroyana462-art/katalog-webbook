@@ -9,6 +9,14 @@ function portalEngine() {
   return {
     currentView: 'catalog', // 'catalog' | 'upload'
     isGrantModalOpen: false,
+    authorStatus: null, // null = memuat | 'none' | 'pending' | 'approved' | 'rejected'
+    authorNote: '',
+    authorApplyForm: { fullName: '', whatsapp: '', bio: '', sampleUrl: '', plan: '', agree: false },
+    isSubmittingApplication: false,
+    isReviewModalOpen: false,
+    reviewLoading: false,
+    reviewApplications: [],
+    reviewNotes: {},
     isGranting: false,
     grantEmail: '',
     grantBookId: '',
@@ -69,6 +77,14 @@ function portalEngine() {
 
     get book() {
       return this.activeBook;
+    },
+
+    get isApprovedAuthor() {
+      return this.isAdmin || this.authorStatus === 'approved';
+    },
+
+    get pendingApplicationsCount() {
+      return this.reviewApplications.filter(a => a.status === 'pending').length;
     },
 
     get isAdmin() {
@@ -158,6 +174,9 @@ function portalEngine() {
     selectedAuthor: 'Semua Penulis',
     accessOptions: ['Semua', 'Gratis', 'Semi Berbayar', 'Berbayar'],
     sortBy: 'newest',
+    currentPage: 1,
+    perPage: 12,
+    
 
     // State Modal Media Sosial Penulis
     isAuthorSocialModalOpen: false,
@@ -173,9 +192,11 @@ function portalEngine() {
     },
 
     // Daftar Kategori Dinamis
-    categories: ['Semua', 'Teknologi & AI', 'Edukasi & Parenting', 'Bisnis & SOP', 'Agama & Pemikiran'],
+    categories: ['Semua', 'Teknologi & AI', 'Edukasi & Parenting', 'Bisnis & SOP', 'Agama & Pemikiran', 'Pengembangan Diri & Komunikasi', 'Fiksi & Sastra', 'Kesehatan & Gaya Hidup', 'Sejarah', 'Politik', 'Ekonomi'],
 
     init() {
+      ['searchQuery', 'selectedCategory', 'selectedAccess', 'selectedAuthor', 'scopeFilter', 'sortBy']
+        .forEach(key => this.$watch(key, () => { this.currentPage = 1; }));
       if (new URLSearchParams(window.location.search).get('aksi') === 'unggah') this.currentView = 'upload';
       const savedTheme = localStorage.getItem('theme');
       if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -209,6 +230,7 @@ function portalEngine() {
           this.currentUser = session?.user || null;
           if (this.currentUser) {
             this.fetchUserPurchases();
+            this.fetchAuthorStatus();
             this.loadAuthorProfile();
           }
         });
@@ -217,6 +239,7 @@ function portalEngine() {
           this.currentUser = session?.user || null;
           if (this.currentUser) {
             this.fetchUserPurchases();
+            this.fetchAuthorStatus();
             this.loadAuthorProfile();
           }
         });
@@ -269,6 +292,7 @@ function portalEngine() {
               accessType: item.access_type || 'Gratis',
               price: item.price || 0,
               isPrivate: Boolean(item.is_private),
+              isDraft: Boolean(item.is_draft),
               coverUrl: item.cover_url || '',
               fileName: item.file_name || null,
               external_link: item.external_link || null,
@@ -303,6 +327,92 @@ function portalEngine() {
       }
     },
 
+    async fetchAuthorStatus() {
+      if (!this.supabaseClient || !this.currentUser) { this.authorStatus = null; return; }
+      try {
+        const { data, error } = await this.supabaseClient
+          .from('author_applications')
+          .select('status, admin_note')
+          .eq('user_id', this.currentUser.id)
+          .maybeSingle();
+        if (error) throw error;
+        this.authorStatus = data ? data.status : 'none';
+        this.authorNote = data?.admin_note || '';
+      } catch (err) {
+        console.warn('Gagal memuat status penulis:', err);
+        this.authorStatus = 'none';
+      }
+      if (this.isAdmin) this.loadApplications(true);
+    },
+
+    async submitAuthorApplication() {
+      const f = this.authorApplyForm;
+      if (!f.fullName.trim() || f.bio.trim().length < 20) {
+        this.showToast('Lengkapi nama dan latar belakang (minimal 20 karakter).', 'error');
+        return;
+      }
+      if (!f.agree) {
+        this.showToast('Setujui pernyataan hak cipta dulu.', 'error');
+        return;
+      }
+      this.isSubmittingApplication = true;
+      try {
+        const { data, error } = await this.supabaseClient.rpc('submit_author_application', {
+          p_full_name: f.fullName.trim(),
+          p_whatsapp: f.whatsapp.trim(),
+          p_bio: f.bio.trim(),
+          p_sample_url: this.safeUrl(f.sampleUrl),
+          p_plan: f.plan.trim()
+        });
+        if (error) throw error;
+        await this.fetchAuthorStatus();
+        this.showToast(data === 'ALREADY_APPROVED' ? 'Akun Anda sudah disetujui.' : 'Pengajuan terkirim. Admin akan meninjaunya.', 'success');
+      } catch (err) {
+        this.showToast('Gagal mengirim pengajuan: ' + (err.message || err), 'error');
+      } finally {
+        this.isSubmittingApplication = false;
+      }
+    },
+
+    async openReviewModal() {
+      this.isReviewModalOpen = true;
+      await this.loadApplications();
+    },
+
+    closeReviewModal() {
+      this.isReviewModalOpen = false;
+    },
+
+    async loadApplications(silent = false) {
+      if (!this.isAdmin || !this.supabaseClient) return;
+      if (!silent) this.reviewLoading = true;
+      try {
+        const { data, error } = await this.supabaseClient.rpc('admin_list_author_applications');
+        if (error) throw error;
+        this.reviewApplications = data || [];
+      } catch (err) {
+        if (!silent) this.showToast('Gagal memuat pengajuan: ' + (err.message || err), 'error');
+      } finally {
+        this.reviewLoading = false;
+      }
+    },
+
+    async reviewApplication(app, status) {
+      if (!this.isAdmin) return;
+      try {
+        const { error } = await this.supabaseClient.rpc('admin_review_author', {
+          p_user: app.user_id,
+          p_status: status,
+          p_note: this.reviewNotes[app.user_id] || ''
+        });
+        if (error) throw error;
+        this.showToast(status === 'approved' ? `${app.email} disetujui sebagai penulis.` : `${app.email} ditolak atau izinnya dicabut.`, 'success');
+        await this.loadApplications();
+      } catch (err) {
+        this.showToast('Gagal menyimpan keputusan: ' + (err.message || err), 'error');
+      }
+    },
+
     async fetchUserPurchases() {
       if (!this.supabaseClient || !this.currentUser) return;
       try {
@@ -330,17 +440,27 @@ function portalEngine() {
       }
     },
 
+    get filterCategories() {
+      // Filter rak: sembunyikan kategori yang belum punya buku terlihat
+      const visible = new Set(
+        this.catalog
+          .filter(b => !b.isDraft && (!b.isPrivate || (this.currentUser && b.userId === this.currentUser.id)))
+          .map(b => b.category)
+      );
+      return ['Semua', ...this.categories.slice(1).filter(c => visible.has(c) || c === this.selectedCategory)];
+    },
+
     get availableCategories() {
       return this.categories.filter(c => c !== 'Semua');
     },
 
     get floatingBooks() {
       const q = this.floatingBookSearch ? this.floatingBookSearch.toLowerCase().trim() : '';
-      return this.catalog.filter(b => !q || b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q));
+      return this.catalog.filter(b => !b.isDraft && (!q || b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q)));
     },
 
     get authorList() {
-      return [...new Set(this.catalog.map(b => b.author))].sort();
+      return [...new Set(this.catalog.filter(b => !b.isDraft && b.author).map(b => b.author))].sort();
     },
 
     async handleAuth() {
@@ -395,6 +515,10 @@ function portalEngine() {
       this.activeBookSignedUrl = '';
       localStorage.removeItem('purchasedBookIds');
       this.clearAuthorProfileFromForm();
+      this.authorStatus = null;
+      this.authorNote = '';
+      this.reviewApplications = [];
+      this.isReviewModalOpen = false;
       await this.fetchBooks();
     },
 
@@ -646,12 +770,38 @@ function portalEngine() {
      return this.getChapterSubchapter(chapter)?.title || chapter?.title || '';
    },
 
+   // Judul yang berasal dari kolom Pembuka/Penutup, bukan bab bernomor
+   isFrontBackMatter(chapter) {
+     const t = (this.getChapterDisplayTitle(chapter) || '').trim();
+     return /^(kata pengantar|prakata|pendahuluan|glosarium|daftar pustaka)$/i.test(t);
+   },
+
+   getMatterLabel(chapter) {
+     const t = (this.getChapterDisplayTitle(chapter) || '').trim();
+     return /^(glosarium|daftar pustaka)$/i.test(t) ? 'Penutup' : 'Pembuka';
+   },
+
    getChapterLabel(chapter, index) {
-     const subchapter = this.getChapterSubchapter(chapter);
-     const chapterNumber = this.activeBook?.chapters
-       ? this.activeBook.chapters.slice(0, index + 1).filter(item => !this.isSubchapter(item)).length
-       : index + 1;
-     return subchapter ? `Subbab ${subchapter.parentIndex}.${subchapter.subchapterIndex}` : `Bab ${chapterNumber}`;
+     const chapters = this.activeBook?.chapters;
+     if (!chapters) return `Bab ${index + 1}`;
+     const sub = this.getChapterSubchapter(chapter);
+     if (sub) {
+       // parentIndex tersimpan sebagai posisi di daftar utama; ubah ke nomor Bab sesungguhnya
+       const mains = chapters.filter(c => !this.isSubchapter(c));
+       const num = mains.slice(0, sub.parentIndex).filter(c => !this.isFrontBackMatter(c)).length;
+       return `Subbab ${num || sub.parentIndex}.${sub.subchapterIndex}`;
+     }
+     if (this.isFrontBackMatter(chapter)) return this.getMatterLabel(chapter);
+     const n = chapters
+       .slice(0, index + 1)
+       .filter(c => !this.isSubchapter(c) && !this.isFrontBackMatter(c)).length;
+     return `Bab ${n}`;
+   },
+
+   getChapterBadge(chapter, index) {
+     if (this.isSubchapter(chapter)) return this.getChapterSubchapter(chapter).subchapterIndex;
+     if (this.isFrontBackMatter(chapter)) return '•';
+     return this.getChapterLabel(chapter, index).replace('Bab ', '');
    },
 
    prepareChaptersForEditing(chapters) {
@@ -680,6 +830,7 @@ function portalEngine() {
    get filteredBooks() {
      return this.catalog.filter(book => {
        if (book.isPrivate && (!this.currentUser || book.userId !== this.currentUser.id)) return false;
+       if (book.isDraft && (this.scopeFilter !== 'my-books' || !this.currentUser || book.userId !== this.currentUser.id)) return false;
 
        if (this.scopeFilter === 'my-books') {
          if (!this.currentUser || book.userId !== this.currentUser.id) return false;
@@ -701,6 +852,31 @@ function portalEngine() {
        if (this.sortBy === 'newest') return new Date(b.createdAt) - new Date(a.createdAt);
        return 0;
      });
+   },
+
+   get totalPages() {
+     return Math.max(1, Math.ceil(this.filteredBooks.length / this.perPage));
+   },
+
+   get pagedBooks() {
+     const start = (this.currentPage - 1) * this.perPage;
+     return this.filteredBooks.slice(start, start + this.perPage);
+   },
+
+   get pageNumbers() {
+     const total = this.totalPages, cur = this.currentPage;
+     const pages = [];
+     for (let i = 1; i <= total; i++) {
+       if (i === 1 || i === total || Math.abs(i - cur) <= 1) pages.push(i);
+       else if (pages[pages.length - 1] !== '...') pages.push('...');
+     }
+     return pages;
+   },
+
+   goToPage(n) {
+     if (n < 1 || n > this.totalPages) return;
+     this.currentPage = n;
+     window.scrollTo({ top: 0, behavior: 'smooth' });
    },
 
    handleFileChange(event) {
@@ -877,8 +1053,11 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
      return data?.publicUrl || '';
    },
 
-   async saveNewBook() {
-     if (!this.uploadForm.rightsAccepted || !this.uploadForm.rightsType) {
+   async saveNewBook(asDraft = false) {
+     if (asDraft) {
+       if (!this.currentUser) { this.showToast('Masuk dulu untuk menyimpan draft.', 'error'); return; }
+       if (!this.uploadForm.title.trim()) { this.showToast('Isi judul buku dulu sebelum menyimpan draft.', 'error'); return; }
+     } else if (!this.uploadForm.rightsAccepted || !this.uploadForm.rightsType) {
        this.showToast('Pilih dasar hak dan setujui pernyataan hak cipta sebelum menyimpan buku.', 'error');
        return;
      }
@@ -887,13 +1066,13 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
      if (this.uploadForm.foreword && this.uploadForm.foreword.trim()) {
        preliminaryChapters.push({
          title: 'Kata Pengantar',
-         content: `<p>${this.uploadForm.foreword.trim().replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p>`
+         content: this.plainTextToHtml(this.uploadForm.foreword)
        });
      }
      if (this.uploadForm.introduction && this.uploadForm.introduction.trim()) {
        preliminaryChapters.push({
          title: 'Pendahuluan',
-         content: `<p>${this.uploadForm.introduction.trim().replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p>`
+         content: this.plainTextToHtml(this.uploadForm.introduction)
        });
      }
 
@@ -911,13 +1090,13 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
      if (this.uploadForm.glossary && this.uploadForm.glossary.trim()) {
        concludingChapters.push({
          title: 'Glosarium',
-         content: `<p>${this.uploadForm.glossary.trim().replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p>`
+         content: this.plainTextToHtml(this.uploadForm.glossary)
        });
      }
      if (this.uploadForm.bibliography && this.uploadForm.bibliography.trim()) {
        concludingChapters.push({
          title: 'Daftar Pustaka',
-         content: `<p>${this.uploadForm.bibliography.trim().replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>')}</p>`
+         content: this.plainTextToHtml(this.uploadForm.bibliography)
        });
      }
 
@@ -934,7 +1113,7 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
        ];
      });
      let formattedChapters = [...preliminaryChapters, ...formattedUserChapters, ...concludingChapters];
-     if (formattedChapters.length === 0) {
+     if (formattedChapters.length === 0 && !asDraft) {
        formattedChapters = [{
          title: `Bab 1: Pengantar ${this.uploadForm.title.trim() || 'Materi'}`,
          content: `<p>${this.uploadForm.blurb.trim()}</p><p class="text-xs text-slate-500 mt-4 italic">Dokumen terlampir: ${this.uploadForm.fileName || 'Tidak ada file fisik'}</p>`
@@ -987,6 +1166,7 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
              external_link: this.uploadForm.external_link?.trim() || null,
              file_url: this.uploadForm.fileUrl || fileUrlToSave,
              file_name: this.uploadForm.fileName || null,
+             is_draft: Boolean(asDraft),
              ...this.getBookMetadataPayload(this.uploadForm)
            };
 
@@ -1037,6 +1217,9 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
          this.catalog[bookIdx].external_link = this.uploadForm.external_link;
          this.catalog[bookIdx].fileUrl = this.uploadForm.fileUrl;
          this.catalog[bookIdx].fileName = this.uploadForm.fileName;
+         this.catalog[bookIdx].isDraft = Boolean(asDraft);
+         this.showToast(asDraft ? 'Draft diperbarui.' : 'Perubahan tersimpan.', 'success');
+         if (asDraft) this.scopeFilter = 'my-books';
        }
        this.cancelEditMode();
        this.goToCatalog();
@@ -1053,6 +1236,7 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
 
      const newBook = {
        id: 'book-' + Date.now(),
+       isDraft: Boolean(asDraft),
        userId: this.currentUser?.id || null,
        title: this.uploadForm.title.trim(),
        author: this.uploadForm.author.trim(),
@@ -1125,6 +1309,7 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
          };
 
          if (this.currentUser?.id) bookPayload.user_id = this.currentUser.id;
+         bookPayload.is_draft = Boolean(asDraft);
          if (newBook.external_link) bookPayload.external_link = newBook.external_link;
          if (newBook.fileUrl) bookPayload.file_url = newBook.fileUrl;
          if (newBook.fileName) bookPayload.file_name = newBook.fileName;
@@ -1177,6 +1362,8 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
      }
 
      this.catalog.unshift(newBook);
+     if (asDraft) { this.scopeFilter = 'my-books'; this.showToast('Draft tersimpan. Lanjutkan kapan saja lewat tab Buku Saya.', 'success'); }
+     else { this.showToast('Buku berhasil diterbitkan.', 'success'); }
      this.clearFile();
      this.uploadForm.title = '';
     this.uploadForm.publisher = '';
@@ -1283,7 +1470,7 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
      if (!t) return '';
      const hasInlineTags = /<[a-z][\s\S]*>/i.test(t);
      // Teks dari Word biasanya hanya satu \n antar paragraf: tiap baris = paragraf
-     const paras = /\n\s*\n/.test(t) ? t.split(/\n\s*\n/) : t.split('\n');
+     const paras = t.split(/\n+/);
      return paras
        .map(p => p.trim())
        .filter(Boolean)
@@ -1875,6 +2062,7 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
      this.selectedAccess = 'Semua';
      this.selectedAuthor = 'Semua Penulis';
      this.sortBy = 'newest';
+     this.currentPage = 1;
    },
 
    goToCatalog() {
@@ -2103,6 +2291,24 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
      this.isPaymentModalOpen = false;
      this.checkoutBook = null;
      this.showToast('Permintaan dikirim. Akses buku aktif setelah pembayaran diverifikasi admin.', 'info');
+   },
+
+   get isEditingDraft() {
+     return Boolean(this.isEditingId && this.catalog.find(b => b.id === this.isEditingId)?.isDraft);
+   },
+
+   formatDate(d) {
+     if (!d) return '';
+     const s = String(d);
+     const dt = new Date(s.length <= 10 ? s + 'T00:00:00' : s);
+     if (isNaN(dt)) return '';
+     return dt.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+   },
+
+   isNewBook(book) {
+     if (!book || book.isDraft || !book.createdAt) return false;
+     const dt = new Date(book.createdAt + 'T00:00:00');
+     return !isNaN(dt) && (Date.now() - dt.getTime()) < 30 * 24 * 60 * 60 * 1000;
    },
 
    formatCurrency(amount) {
