@@ -244,7 +244,8 @@
     <div class="bg-white/80 dark:bg-slate-900/90 backdrop-blur-md border border-stone-200/80 dark:border-slate-800 rounded-2xl p-4 md:p-6 mb-8 space-y-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none">
       
       <!-- Tab Navigasi Lingkup: Semua Koleksi vs Buku Saya (Hanya tampil jika sudah login) -->
-      <template x-if="currentUser">
+      <!-- tab Buku Saya: khusus penulis -->
+      <template x-if="currentUser && isApprovedAuthor">
         <div>
           <!-- Dropdown Lingkup untuk HP -->
           <div class="sm:hidden pb-3 border-b border-stone-200/60 dark:border-slate-800">
