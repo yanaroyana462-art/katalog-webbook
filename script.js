@@ -832,6 +832,8 @@ function portalEngine() {
        if (book.isPrivate && (!this.currentUser || book.userId !== this.currentUser.id)) return false;
        if (book.isDraft && (this.scopeFilter !== 'my-books' || !this.currentUser || book.userId !== this.currentUser.id)) return false;
 
+       if (this.scopeFilter === 'purchased' && !this.purchasedBookIds.map(String).includes(String(book.id))) return false;
+
        if (this.scopeFilter === 'my-books') {
          if (!this.currentUser || book.userId !== this.currentUser.id) return false;
        }

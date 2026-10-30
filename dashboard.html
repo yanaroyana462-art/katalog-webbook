@@ -182,6 +182,7 @@
               <button type="button" class="pw-menu-item" x-show="authorStatus !== null && !isApprovedAuthor" style="display:none" @click="menu = false; closeReader(); currentView = 'upload'"
                       x-text="authorStatus === 'pending' ? '⏳ Lihat Status Pengajuan Penulis' : '✍️ Jadi Penulis'"></button>
               <button type="button" class="pw-menu-item" x-show="isAdmin" style="display:none" @click="menu = false; openGrantModal()">🔑 Beri Akses Buku</button>
+              <button type="button" class="pw-menu-item" @click="menu = false; goToCatalog(); scopeFilter = 'purchased'; window.scrollTo({ top: 0, behavior: 'smooth' })">📚 Buku yang Saya Beli</button>
               <button type="button" class="pw-menu-item" style="color:#e11d48" @click="menu = false; handleLogout()">🚪 Keluar</button>
             </div>
           </div>
@@ -370,6 +371,12 @@
 
     </div>
 
+    <div x-show="scopeFilter === 'purchased'" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding:12px 16px;border-radius:12px;background:#ecfdf5;color:#065f46;font-size:13px">
+        <span>📚 Menampilkan buku yang sudah Anda beli.</span>
+        <button type="button" @click="scopeFilter = 'all'" style="border:0;background:#059669;color:#fff;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer">Lihat semua koleksi</button>
+      </div>
+    </div>
     <!-- GRID BUKU HASIL FILTER -->
     <div class="book-grid" x-show="filteredBooks.length > 0">
       <template x-for="(book, index) in pagedBooks" :key="book.id">
