@@ -14,6 +14,11 @@ function portalEngine() {
     authorApplyForm: { fullName: '', whatsapp: '', bio: '', sampleUrl: '', plan: '', agree: false },
     isSubmittingApplication: false,
     isReviewModalOpen: false,
+    isUsersModalOpen: false,
+usersLoading: false,
+usersList: [],
+usersSearch: '',
+usersRoleFilter: 'Semua',
     reviewLoading: false,
     reviewApplications: [],
     reviewNotes: {},
@@ -423,7 +428,53 @@ function portalEngine() {
         this.showToast('Gagal menyimpan keputusan: ' + (err.message || err), 'error');
       }
     },
+get filteredUsers() {
+  const q = this.usersSearch.toLowerCase().trim();
+  return this.usersList.filter(u => {
+    if (this.usersRoleFilter !== 'Semua' && u.role !== this.usersRoleFilter) return false;
+    if (!q) return true;
+    return [u.full_name, u.email, u.whatsapp].some(v => String(v || '').toLowerCase().includes(q));
+  });
+},
 
+async openUsersModal() {
+  if (!this.isAdmin) return;
+  this.isUsersModalOpen = true;
+  await this.loadUsers();
+},
+
+closeUsersModal() {
+  this.isUsersModalOpen = false;
+},
+
+async loadUsers() {
+  if (!this.isAdmin || !this.supabaseClient) return;
+  this.usersLoading = true;
+  try {
+    const { data, error } = await this.supabaseClient.rpc('admin_list_users');
+    if (error) throw error;
+    this.usersList = data || [];
+  } catch (err) {
+    this.showToast('Gagal memuat data pengguna: ' + (err.message || err), 'error');
+  } finally {
+    this.usersLoading = false;
+  }
+},
+
+exportUsersCsv() {
+  const esc = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const rows = [['Nama', 'WhatsApp', 'Email', 'Peran', 'Terdaftar']]
+    .concat(this.filteredUsers.map(u => [u.full_name, u.whatsapp, u.email, u.role, this.formatDate(u.created_at)]));
+  const csv = '\ufeff' + rows.map(r => r.map(esc).join(',')).join('\n');
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'data-pengguna.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+},
     async fetchUserPurchases() {
       if (!this.supabaseClient || !this.currentUser) return;
       try {
@@ -576,6 +627,8 @@ function portalEngine() {
       if (this.supabaseClient) {
         await this.supabaseClient.auth.signOut();
       }
+      this.usersList = [];
+this.isUsersModalOpen = false;
       this.currentUser = null;
       this.scopeFilter = 'all';
       this.purchasedBookIds = [];
