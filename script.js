@@ -29,7 +29,13 @@ function portalEngine() {
     authPassword: '',
     authLoading: false,
     authError: '',
-    authSuccess: '',
+      authSuccess: '',
+    authName: '',
+    authWhatsapp: '',
+    newPassword: '',
+    newPassword2: '',
+    isRecoveryModalOpen: false,
+    isSavingNewPassword: false,
     darkMode: false,
     supabaseClient: null,
     isSaving: false,
@@ -235,8 +241,10 @@ function portalEngine() {
           }
         });
 
-        this.supabaseClient.auth.onAuthStateChange((_event, session) => {
+               this.supabaseClient.auth.onAuthStateChange((event, session) => {
           this.currentUser = session?.user || null;
+          // Pengguna datang dari tautan "lupa password" di email
+          if (event === 'PASSWORD_RECOVERY') this.isRecoveryModalOpen = true;
           if (this.currentUser) {
             this.fetchUserPurchases();
             this.fetchAuthorStatus();
@@ -329,6 +337,9 @@ function portalEngine() {
 
     async fetchAuthorStatus() {
       if (!this.supabaseClient || !this.currentUser) { this.authorStatus = null; return; }
+            const meta = this.currentUser.user_metadata || {};
+      if (!this.authorApplyForm.fullName && meta.full_name) this.authorApplyForm.fullName = meta.full_name;
+      if (!this.authorApplyForm.whatsapp && meta.whatsapp) this.authorApplyForm.whatsapp = meta.whatsapp;
       try {
         const { data, error } = await this.supabaseClient
           .from('author_applications')
@@ -463,6 +474,20 @@ function portalEngine() {
       return [...new Set(this.catalog.filter(b => !b.isDraft && b.author).map(b => b.author))].sort();
     },
 
+      // Normalisasi nomor WhatsApp ke format 62xxxxxxxxxx; kembalikan '' jika tidak valid
+    normalizeWhatsapp(value) {
+      let d = String(value || '').replace(/\D/g, '');
+      if (d.startsWith('0')) d = '62' + d.slice(1);
+      else if (d.startsWith('8')) d = '62' + d;
+      return /^62\d{8,13}$/.test(d) ? d : '';
+    },
+
+    switchAuthMode(mode) {
+      this.authMode = mode; // 'login' | 'register' | 'forgot'
+      this.authError = '';
+      this.authSuccess = '';
+    },
+
     async handleAuth() {
       if (!this.supabaseClient) {
         this.authError = 'Layanan database belum terhubung.';
@@ -473,9 +498,11 @@ function portalEngine() {
       this.authSuccess = '';
 
       try {
+        const email = this.authEmail.trim();
+
         if (this.authMode === 'login') {
           const { data, error } = await this.supabaseClient.auth.signInWithPassword({
-            email: this.authEmail,
+            email,
             password: this.authPassword
           });
           if (error) throw error;
@@ -483,23 +510,64 @@ function portalEngine() {
           this.authPassword = '';
           this.loadAuthorProfile();
           await this.fetchBooks();
-        } else {
+
+        } else if (this.authMode === 'register') {
+          const name = this.authName.trim();
+          const wa = this.normalizeWhatsapp(this.authWhatsapp);
+          if (name.length < 2) throw new Error('Nama lengkap wajib diisi.');
+          if (!wa) throw new Error('Nomor WhatsApp tidak valid. Contoh: 08123456789.');
+
           const { data, error } = await this.supabaseClient.auth.signUp({
-            email: this.authEmail,
-            password: this.authPassword
+            email,
+            password: this.authPassword,
+            options: { data: { full_name: name, whatsapp: wa } }
           });
           if (error) throw error;
           this.authSuccess = 'Pendaftaran berhasil! Silakan periksa email Anda jika verifikasi aktif, atau langsung masuk.';
+          this.authPassword = '';
           if (data.session) {
             this.currentUser = data.user;
             await this.fetchBooks();
             this.loadAuthorProfile();
           }
+
+        } else if (this.authMode === 'forgot') {
+          if (!email) throw new Error('Masukkan alamat email Anda.');
+          const { error } = await this.supabaseClient.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.origin + window.location.pathname
+          });
+          if (error) throw error;
+          this.authSuccess = 'Jika email terdaftar, tautan untuk mengatur ulang kata sandi sudah dikirim. Periksa kotak masuk atau folder spam.';
         }
       } catch (err) {
         this.authError = err.message || 'Terjadi kesalahan saat otentikasi.';
       } finally {
         this.authLoading = false;
+      }
+    },
+
+    async submitNewPassword() {
+      if (this.newPassword.length < 6) {
+        this.showToast('Kata sandi minimal 6 karakter.', 'error');
+        return;
+      }
+      if (this.newPassword !== this.newPassword2) {
+        this.showToast('Konfirmasi kata sandi tidak sama.', 'error');
+        return;
+      }
+      this.isSavingNewPassword = true;
+      try {
+        const { error } = await this.supabaseClient.auth.updateUser({ password: this.newPassword });
+        if (error) throw error;
+        this.newPassword = '';
+        this.newPassword2 = '';
+        this.isRecoveryModalOpen = false;
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+        this.showToast('Kata sandi berhasil diperbarui.', 'success');
+      } catch (err) {
+        this.showToast('Gagal memperbarui kata sandi: ' + (err.message || err), 'error');
+      } finally {
+        this.isSavingNewPassword = false;
       }
     },
 

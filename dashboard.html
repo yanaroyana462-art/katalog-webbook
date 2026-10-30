@@ -24,12 +24,12 @@
   <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
   <!-- PDF-Lib untuk Stamping Watermark Dinamis -->
   <!-- Engine Logika Aplikasi -->
-  <script defer src="script.js?v=2.16"></script>
+  <script defer src="script.js?v=2.17"></script>
   <!-- Alpine.js Collapse Plugin (Wajib dimuat sebelum Alpine Core) -->
   <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
   <!-- Alpine.js -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <link rel="stylesheet" href="tailwind.css?v=14" />
+  <link rel="stylesheet" href="tailwind.css?v=15" />
   <script defer src="https://cloud.umami.is/script.js" data-website-id="f06bcb2f-20c3-4329-9eb8-5ac5daea37b2"></script>
   <!-- Custom Stylesheet -->
   <link rel="stylesheet" href="style.css" />
@@ -558,61 +558,17 @@
 
     <!-- Kartu Login / Daftar Akun jika belum terautentikasi -->
     <div x-show="!currentUser" class="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-6 md:p-8 max-w-md mx-auto shadow-sm shadow-slate-200 dark:shadow-none">
-      <div class="text-center mb-6">
+           <div class="text-center">
         <div class="w-12 h-12 mx-auto rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-3">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
         </div>
-        <h3 class="text-lg font-bold text-slate-900 dark:text-white" x-text="authMode === 'login' ? 'Masuk ke Akun Member' : 'Daftar Akun Member'"></h3>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Hanya member terdaftar yang memiliki izin untuk mempublikasikan dan mengunggah berkas buku.</p>
-      </div>
-
-      <!-- Tab Navigasi Mode Auth -->
-      <div class="flex bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl mb-5 text-xs font-semibold">
-        <button type="button" @click="authMode = 'login'; authError = ''; authSuccess = '';" 
-                :class="authMode === 'login' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'"
-                class="flex-1 py-2 rounded-lg transition text-center">
-          Masuk
-        </button>
-        <button type="button" @click="authMode = 'register'; authError = ''; authSuccess = '';" 
-                :class="authMode === 'register' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'"
-                class="flex-1 py-2 rounded-lg transition text-center">
-          Daftar Akun
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white">Masuk untuk Melanjutkan</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-5">Hanya member terdaftar yang dapat mengajukan diri sebagai penulis dan mengunggah buku.</p>
+        <button type="button" @click="$dispatch('open-login')"
+                class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-indigo-600/30 transition">
+          Masuk / Daftar
         </button>
       </div>
-
-      <!-- Pesan Notifikasi Error / Sukses Auth -->
-      <div x-show="authError" class="p-3 mb-4 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 text-xs">
-        <span x-text="authError"></span>
-      </div>
-      <div x-show="authSuccess" class="p-3 mb-4 rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 text-xs">
-        <span x-text="authSuccess"></span>
-      </div>
-
-      <!-- Form Masuk / Daftar -->
-      <form @submit.prevent="handleAuth()" class="space-y-4">
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Alamat Email</label>
-          <input type="email" x-model="authEmail" required placeholder="nama@email.com" 
-                 class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition" />
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Kata Sandi</label>
-          <input type="password" x-model="authPassword" required minlength="6" placeholder="Minimal 6 karakter" 
-                 class="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition" />
-        </div>
-
-        <button type="submit" :disabled="authLoading" 
-                class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white rounded-xl text-xs font-semibold shadow-md shadow-indigo-600/30 transition flex items-center justify-center gap-2">
-          <template x-if="authLoading">
-            <svg class="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-            </svg>
-          </template>
-          <span x-text="authLoading ? 'Memproses...' : (authMode === 'login' ? 'Masuk Sekarang' : 'Daftar Sekarang')"></span>
-        </button>
-      </form>
     </div>
 
     <!-- Form Unggah (Hanya Tampil Jika Sudah Login) -->
@@ -2428,7 +2384,8 @@
     <span class="font-bold text-sm text-stone-900 dark:text-white">Pustaka WebBook</span>
   </div>
   <p class="text-stone-600 dark:text-slate-400 leading-relaxed">Portal buku interaktif dan digital. Baca, kumpulkan, dan terbitkan buku Anda dalam satu rak.</p>
-</div>>
+</div>
+        </div>
 
         <div>
           <h4 class="font-bold text-stone-900 dark:text-white mb-3">Informasi</h4>
@@ -2707,9 +2664,9 @@
 .pw-menu-item:hover{background:rgba(148,163,184,.18)}
 </style>
 
-<!-- Jendela Masuk / Daftar -->
+<!-- Jendela Masuk / Daftar / Lupa Password -->
 <div x-data="{ open: false }"
-     @open-login.window="authMode = 'login'; authError = ''; authSuccess = ''; open = true"
+     @open-login.window="switchAuthMode('login'); open = true"
      x-effect="if (currentUser) open = false"
      @keydown.escape.window="open = false"
      x-show="open && !currentUser"
@@ -2719,34 +2676,90 @@
     <div style="width:100%;max-width:400px;background:#fff;color:#0f172a;border-radius:16px;padding:24px;box-shadow:0 20px 50px rgba(0,0,0,.35)">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div>
-          <h3 style="margin:0;font-size:18px;font-weight:700" x-text="authMode === 'login' ? 'Masuk ke Akun Anda' : 'Daftar Akun Baru'"></h3>
-          <p style="margin:4px 0 0;font-size:12px;color:#64748b">Akun diperlukan untuk membeli dan membaca buku berbayar.</p>
+          <h3 style="margin:0;font-size:18px;font-weight:700"
+              x-text="authMode === 'login' ? 'Masuk ke Akun Anda' : (authMode === 'register' ? 'Daftar Akun Baru' : 'Lupa Kata Sandi')"></h3>
+          <p style="margin:4px 0 0;font-size:12px;color:#64748b"
+             x-text="authMode === 'forgot' ? 'Masukkan email akun Anda. Kami kirim tautan untuk mengatur ulang kata sandi.' : 'Akun diperlukan untuk membeli dan membaca buku berbayar.'"></p>
         </div>
         <button type="button" @click="open = false" style="border:0;background:transparent;font-size:24px;line-height:1;cursor:pointer;color:#64748b">&times;</button>
       </div>
 
-      <div style="display:flex;background:#f1f5f9;border-radius:10px;padding:4px;margin:16px 0;font-size:13px;font-weight:600">
-        <button type="button" @click="authMode = 'login'; authError = ''; authSuccess = ''"
+      <!-- Tab Masuk / Daftar (disembunyikan saat lupa password) -->
+      <div x-show="authMode !== 'forgot'" style="display:flex;background:#f1f5f9;border-radius:10px;padding:4px;margin:16px 0;font-size:13px;font-weight:600">
+        <button type="button" @click="switchAuthMode('login')"
                 :style="authMode === 'login' ? 'background:#fff;color:#0f172a;box-shadow:0 1px 2px rgba(0,0,0,.1)' : 'background:transparent;color:#64748b'"
                 style="flex:1;border:0;border-radius:8px;padding:8px;cursor:pointer">Masuk</button>
-        <button type="button" @click="authMode = 'register'; authError = ''; authSuccess = ''"
+        <button type="button" @click="switchAuthMode('register')"
                 :style="authMode === 'register' ? 'background:#fff;color:#0f172a;box-shadow:0 1px 2px rgba(0,0,0,.1)' : 'background:transparent;color:#64748b'"
                 style="flex:1;border:0;border-radius:8px;padding:8px;cursor:pointer">Daftar</button>
       </div>
+      <div x-show="authMode === 'forgot'" style="height:16px"></div>
 
       <p x-show="authError" x-text="authError" style="display:none;margin:0 0 12px;background:#fee2e2;color:#991b1b;border-radius:8px;padding:10px;font-size:12px"></p>
       <p x-show="authSuccess" x-text="authSuccess" style="display:none;margin:0 0 12px;background:#d1fae5;color:#065f46;border-radius:8px;padding:10px;font-size:12px"></p>
 
       <form @submit.prevent="handleAuth()">
+        <!-- Nama & WhatsApp: hanya saat daftar -->
+        <template x-if="authMode === 'register'">
+          <div>
+            <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px">Nama Lengkap</label>
+            <input type="text" x-model="authName" required maxlength="120" placeholder="Nama Anda" autocomplete="name"
+                   style="width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;font-size:13px;background:#fff;color:#0f172a">
+            <label style="display:block;font-size:12px;font-weight:600;margin:12px 0 4px">Nomor WhatsApp</label>
+            <input type="tel" x-model="authWhatsapp" required maxlength="20" placeholder="08123456789" autocomplete="tel" inputmode="tel"
+                   style="width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;font-size:13px;background:#fff;color:#0f172a">
+            <p style="margin:4px 0 12px;font-size:11px;color:#64748b">Dipakai admin untuk konfirmasi pembelian dan bantuan akun.</p>
+          </div>
+        </template>
+
         <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px">Alamat Email</label>
-        <input type="email" x-model="authEmail" required placeholder="nama@email.com"
+        <input type="email" x-model="authEmail" required placeholder="nama@email.com" autocomplete="email"
                style="width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;font-size:13px;background:#fff;color:#0f172a">
-        <label style="display:block;font-size:12px;font-weight:600;margin:12px 0 4px">Kata Sandi</label>
-        <input type="password" x-model="authPassword" required minlength="6" placeholder="Minimal 6 karakter"
-               style="width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;font-size:13px;background:#fff;color:#0f172a">
+
+        <!-- Kata sandi: tidak ada saat lupa password -->
+        <template x-if="authMode !== 'forgot'">
+          <div>
+            <label style="display:block;font-size:12px;font-weight:600;margin:12px 0 4px">Kata Sandi</label>
+            <input type="password" x-model="authPassword" required minlength="6" placeholder="Minimal 6 karakter"
+                   :autocomplete="authMode === 'login' ? 'current-password' : 'new-password'"
+                   style="width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;font-size:13px;background:#fff;color:#0f172a">
+            <div x-show="authMode === 'login'" style="text-align:right;margin-top:6px">
+              <button type="button" @click="switchAuthMode('forgot')"
+                      style="border:0;background:none;padding:0;font-size:12px;color:#4f46e5;text-decoration:underline;cursor:pointer">Lupa kata sandi?</button>
+            </div>
+          </div>
+        </template>
+
         <button type="submit" :disabled="authLoading"
                 style="margin-top:16px;width:100%;border:0;background:#4f46e5;color:#fff;border-radius:10px;padding:11px;font-size:13px;font-weight:600;cursor:pointer"
-                x-text="authLoading ? 'Memproses...' : (authMode === 'login' ? 'Masuk Sekarang' : 'Daftar Sekarang')"></button>
+                x-text="authLoading ? 'Memproses...' : (authMode === 'login' ? 'Masuk Sekarang' : (authMode === 'register' ? 'Daftar Sekarang' : 'Kirim Tautan Reset'))"></button>
+
+        <div x-show="authMode === 'forgot'" style="text-align:center;margin-top:12px">
+          <button type="button" @click="switchAuthMode('login')"
+                  style="border:0;background:none;padding:0;font-size:12px;color:#4f46e5;text-decoration:underline;cursor:pointer">&larr; Kembali ke Masuk</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Jendela Atur Kata Sandi Baru (muncul setelah klik tautan di email) -->
+<div x-show="isRecoveryModalOpen" x-cloak
+     style="display:none;position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.6);overflow-y:auto">
+  <div style="min-height:100%;display:flex;align-items:center;justify-content:center;padding:16px">
+    <div style="width:100%;max-width:400px;background:#fff;color:#0f172a;border-radius:16px;padding:24px;box-shadow:0 20px 50px rgba(0,0,0,.35)">
+      <h3 style="margin:0;font-size:18px;font-weight:700">Atur Kata Sandi Baru</h3>
+      <p style="margin:4px 0 16px;font-size:12px;color:#64748b">Buat kata sandi baru untuk akun Anda.</p>
+      <form @submit.prevent="submitNewPassword()">
+        <label style="display:block;font-size:12px;font-weight:600;margin-bottom:4px">Kata Sandi Baru</label>
+        <input type="password" x-model="newPassword" required minlength="6" placeholder="Minimal 6 karakter" autocomplete="new-password"
+               style="width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;font-size:13px;background:#fff;color:#0f172a">
+        <label style="display:block;font-size:12px;font-weight:600;margin:12px 0 4px">Ulangi Kata Sandi Baru</label>
+        <input type="password" x-model="newPassword2" required minlength="6" placeholder="Ketik ulang" autocomplete="new-password"
+               style="width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;font-size:13px;background:#fff;color:#0f172a">
+        <button type="submit" :disabled="isSavingNewPassword"
+                style="margin-top:16px;width:100%;border:0;background:#4f46e5;color:#fff;border-radius:10px;padding:11px;font-size:13px;font-weight:600;cursor:pointer"
+                x-text="isSavingNewPassword ? 'Menyimpan...' : 'Simpan Kata Sandi'"></button>
       </form>
     </div>
   </div>
