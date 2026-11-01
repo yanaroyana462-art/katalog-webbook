@@ -188,7 +188,7 @@ if (/[?&]book=/.test(location.search)) { location.replace('dashboard.html' + loc
     </div>
     <div class="nav-r">
       <button class="icon-btn" id="themeBtn" aria-label="Ganti tema terang/gelap">🌙</button>
-      <a class="btn btn-p btn-sm" data-main data-catalog href="dashboard.html">Jelajahi Rak</a>
+      <a class="btn btn-p btn-sm" data-main data-catalog href="dashboard.html">Mulai Membaca</a>
     </div>
   </div>
 </nav>
@@ -353,7 +353,7 @@ if (/[?&]book=/.test(location.search)) { location.replace('dashboard.html' + loc
   <div class="wrap f-in">
     <div>© <span id="yr"></span> Katalog WebBook Kaffahmedia. Seluruh hak cipta buku tetap milik penulis atau pemegang hak masing-masing.</div>
     <div class="f-links">
-      <a data-catalog href="dashboard.html">Rak Buku</a>
+      <a data-catalog href="dashboard.html">Mulai Membaca</a>
       <a data-wa href="#">WhatsApp Admin</a>
       <a href="mailto:yanaroyana462@gmail.com">yanaroyana462@gmail.com</a>
     </div>
@@ -381,7 +381,7 @@ if (/[?&]book=/.test(location.search)) { location.replace('dashboard.html' + loc
     if (k) { const ss = JSON.parse(localStorage.getItem(k)); loggedIn = !!(ss && (ss.refresh_token || (ss.access_token && ss.expires_at * 1000 > Date.now()))); }
   } catch (e) {}
   if (loggedIn) {
-    document.querySelectorAll('[data-main]').forEach(el => el.textContent = 'Lanjut ke Rak Saya →');
+    document.querySelectorAll('[data-main]').forEach(el => el.textContent = 'Mulai Membaca →');
     document.querySelectorAll('[data-upload-main]').forEach(el => el.textContent = 'Unggah Buku Baru →');
   }
   document.getElementById('yr').textContent = new Date().getFullYear();
