@@ -178,7 +178,9 @@ usersRoleFilter: 'Semua',
     },
 
     // State Filter
-    scopeFilter: 'all', // 'all' | 'my-books'
+    scopeFilter: 'all', // 'all' | 'my-books' | 'reading' | 'purchased'
+    readingBookIds: [],
+    readingHistoryLoading: false,
     searchQuery: '',
     selectedCategory: 'Semua',
     selectedAccess: 'Semua',
@@ -241,6 +243,7 @@ usersRoleFilter: 'Semua',
           this.currentUser = session?.user || null;
           if (this.currentUser) {
             this.fetchUserPurchases();
+            this.fetchReadingHistory();
             this.fetchAuthorStatus();
             this.loadAuthorProfile();
           }
@@ -252,8 +255,11 @@ usersRoleFilter: 'Semua',
           if (event === 'PASSWORD_RECOVERY') this.isRecoveryModalOpen = true;
           if (this.currentUser) {
             this.fetchUserPurchases();
+            this.fetchReadingHistory();
             this.fetchAuthorStatus();
             this.loadAuthorProfile();
+          } else {
+            this.readingBookIds = [];
           }
         });
 
@@ -488,6 +494,36 @@ exportUsersCsv() {
       }
     },
 
+    async fetchReadingHistory() {
+      if (!this.supabaseClient || !this.currentUser) {
+        this.readingBookIds = [];
+        return;
+      }
+      this.readingHistoryLoading = true;
+      try {
+        const { data, error } = await this.supabaseClient
+          .from('reading_events')
+          .select('book_id, created_at')
+          .eq('user_id', this.currentUser.id)
+          .in('event_type', ['book_open', 'chapter_read'])
+          .order('created_at', { ascending: false })
+          .limit(200);
+        if (error) throw error;
+        this.readingBookIds = [...new Set((data || []).map(row => String(row.book_id)))];
+      } catch (err) {
+        this.readingBookIds = [];
+        console.warn('Gagal memuat riwayat bacaan:', err.message || err);
+      } finally {
+        this.readingHistoryLoading = false;
+      }
+    },
+
+    rememberReadBook(book) {
+      if (!this.currentUser || !book?.id) return;
+      const bookId = String(book.id);
+      this.readingBookIds = [bookId, ...this.readingBookIds.filter(id => String(id) !== bookId)];
+    },
+
     toggleDarkMode() {
       this.darkMode = !this.darkMode;
       localStorage.setItem('theme', this.darkMode ? 'dark' : 'light');
@@ -628,6 +664,7 @@ this.isUsersModalOpen = false;
       this.currentUser = null;
       this.scopeFilter = 'all';
       this.purchasedBookIds = [];
+      this.readingBookIds = [];
       this.activeBook = null;
       this.activeBookSignedUrl = '';
       localStorage.removeItem('purchasedBookIds');
@@ -949,7 +986,8 @@ this.isUsersModalOpen = false;
        if (book.isPrivate && (!this.currentUser || book.userId !== this.currentUser.id)) return false;
        if (book.isDraft && (this.scopeFilter !== 'my-books' || !this.currentUser || book.userId !== this.currentUser.id)) return false;
 
-       if (this.scopeFilter === 'purchased' && !this.purchasedBookIds.map(String).includes(String(book.id))) return false;
+      if (this.scopeFilter === 'purchased' && !this.purchasedBookIds.map(String).includes(String(book.id))) return false;
+      if (this.scopeFilter === 'reading' && !this.readingBookIds.map(String).includes(String(book.id))) return false;
 
        if (this.scopeFilter === 'my-books') {
          if (!this.currentUser || book.userId !== this.currentUser.id) return false;
@@ -2334,6 +2372,7 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
    async openBook(book) {
      this.stopTTS();
      this.activeBook = { ...book, chapters: book.chapters ? [...book.chapters] : [] };
+     this.rememberReadBook(book);
           this.trackEvent('book_open', book);
      this.activeBookSignedUrl = '';
      this.currentChapterIndex = 0;
@@ -2473,13 +2512,14 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
      } catch (e) {}
 
      try {
-       await this.supabaseClient.from('reading_events').insert({
+      const { error } = await this.supabaseClient.from('reading_events').insert({
          book_id: bookId,
          chapter_title: chapterTitle,
          session_id: this.getReaderSessionId(),
          event_type: type,
          user_id: this.currentUser?.id || null
        });
+      if (!error && this.currentUser) this.rememberReadBook(book);
      } catch (e) {
        console.warn('Gagal mencatat kunjungan:', e);
      }

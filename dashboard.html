@@ -183,6 +183,7 @@
                       x-text="authorStatus === 'pending' ? '⏳ Lihat Status Pengajuan Penulis' : '✍️ Jadi Penulis'"></button>
               <button type="button" class="pw-menu-item" x-show="isAdmin" style="display:none" @click="menu = false; openGrantModal()">🔑 Beri Akses Buku</button>
               <button type="button" class="pw-menu-item" x-show="isAdmin" style="display:none" @click="menu = false; openUsersModal()">👥 Data Pengguna</button>
+              <button type="button" class="pw-menu-item" @click="menu = false; goToCatalog(); scopeFilter = 'reading'; window.scrollTo({ top: 0, behavior: 'smooth' })">📖 Riwayat Bacaan</button>
               <button type="button" class="pw-menu-item" @click="menu = false; goToCatalog(); scopeFilter = 'purchased'; window.scrollTo({ top: 0, behavior: 'smooth' })">📚 Buku yang Saya Beli</button>
               <button type="button" class="pw-menu-item" style="color:#e11d48" @click="menu = false; handleLogout()">🚪 Keluar</button>
             </div>
@@ -246,14 +247,17 @@
       
       <!-- Tab Navigasi Lingkup: Semua Koleksi vs Buku Saya (Hanya tampil jika sudah login) -->
       <!-- tab Buku Saya: khusus penulis -->
-      <template x-if="currentUser && isApprovedAuthor">
+      <template x-if="currentUser">
         <div>
           <!-- Dropdown Lingkup untuk HP -->
           <div class="sm:hidden pb-3 border-b border-stone-200/60 dark:border-slate-800">
             <label class="block text-[11px] font-semibold text-stone-500 dark:text-slate-400 mb-1">Lingkup Koleksi:</label>
             <select x-model="scopeFilter" class="w-full bg-stone-50 dark:bg-slate-800 border border-stone-200 dark:border-slate-700 text-xs text-stone-800 dark:text-slate-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-indigo-500">
               <option value="all">Semua Koleksi</option>
-              <option value="my-books" x-text="`Buku Saya (${catalog.filter(b => b.userId === currentUser.id).length})`"></option>
+              <option value="reading" x-text="`Riwayat Bacaan (${readingBookIds.length})`"></option>
+              <template x-if="isApprovedAuthor">
+                <option value="my-books" x-text="`Buku Saya (${catalog.filter(b => b.userId === currentUser.id).length})`"></option>
+              </template>
             </select>
           </div>
 
@@ -266,6 +270,17 @@
                     : 'bg-stone-100 dark:bg-slate-800 text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white'">
             <span>Semua Koleksi</span>
           </button>
+            <button type="button" @click="scopeFilter = 'reading'"
+              class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5"
+              :class="scopeFilter === 'reading'
+                ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30'
+                : 'bg-stone-100 dark:bg-slate-800 text-stone-600 dark:text-slate-400 hover:text-stone-900 dark:hover:text-white'">
+              <span>Riwayat Bacaan</span>
+              <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+              :class="scopeFilter === 'reading' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'"
+              x-text="readingBookIds.length"></span>
+            </button>
+            <template x-if="isApprovedAuthor">
           <button type="button" @click="scopeFilter = 'my-books'"
                   class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5"
                   :class="scopeFilter === 'my-books' 
@@ -277,6 +292,7 @@
                   :class="scopeFilter === 'my-books' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'" 
                   x-text="catalog.filter(b => b.userId === currentUser.id).length"></span>
           </button>
+          </template>
         </div>
         </div>
       </template>
@@ -377,6 +393,13 @@
       <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding:12px 16px;border-radius:12px;background:#ecfdf5;color:#065f46;font-size:13px">
         <span>📚 Menampilkan buku yang sudah Anda beli.</span>
         <button type="button" @click="scopeFilter = 'all'" style="border:0;background:#059669;color:#fff;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer">Lihat semua koleksi</button>
+      </div>
+    </div>
+    <div x-show="scopeFilter === 'reading'" style="display:none">
+      <div class="mb-4 flex items-center justify-between gap-3 flex-wrap p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900/60 text-xs text-indigo-900 dark:text-indigo-200">
+        <span x-show="!readingHistoryLoading">📖 Menampilkan buku yang pernah Anda buka.</span>
+        <span x-show="readingHistoryLoading">Memuat riwayat bacaan...</span>
+        <button type="button" @click="scopeFilter = 'all'" class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition">Lihat semua koleksi</button>
       </div>
     </div>
     <!-- GRID BUKU HASIL FILTER -->
@@ -499,7 +522,7 @@
     <div x-show="filteredBooks.length === 0" class="text-center py-16 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
       <svg class="w-12 h-12 text-slate-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
       <p class="text-sm text-slate-600 dark:text-slate-300 font-medium" 
-         x-text="scopeFilter === 'my-books' ? 'Anda belum memiliki buku yang diunggah ke rak.' : 'Tidak ada buku yang sesuai dengan pencarian atau kategori ini.'"></p>
+         x-text="scopeFilter === 'my-books' ? 'Anda belum memiliki buku yang diunggah ke rak.' : scopeFilter === 'reading' ? 'Belum ada buku yang Anda buka. Buka buku dari katalog untuk mengisinya.' : 'Tidak ada buku yang sesuai dengan pencarian atau kategori ini.'"></p>
       <div class="mt-3 flex items-center justify-center gap-2">
         <button @click="resetFilters()" class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-lg transition">
           Reset Filter
@@ -2511,6 +2534,7 @@
             <li><strong>Profil penulis (opsional):</strong> nama pena, foto, biografi, dan tautan media sosial atau kontak yang Anda isi sendiri. Informasi ini tampil publik pada buku yang Anda terbitkan.</li>
             <li><strong>Buku dan berkas:</strong> judul, sinopsis, isi bab, sampul, dan dokumen yang Anda unggah.</li>
             <li><strong>Akses buku:</strong> catatan buku berbayar apa saja yang sudah dibuka untuk akun Anda.</li>
+            <li><strong>Riwayat bacaan:</strong> daftar buku yang Anda buka saat login, agar tersedia sebagai rak pribadi pada akun Anda.</li>
             <li><strong>Statistik kunjungan:</strong> data kunjungan yang bersifat agregat melalui layanan analitik Umami, untuk mengetahui halaman mana yang sering dibuka.</li>
           </ul>
 
