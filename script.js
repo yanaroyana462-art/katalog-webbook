@@ -482,11 +482,7 @@ exportUsersCsv() {
           .from('purchases')
           .select('book_id')
           .eq('user_id', this.currentUser.id);
-        if (!error && data && data.length > 0) {
-          const remoteIds = data.map(row => String(row.book_id));
-          this.purchasedBookIds = remoteIds;
-          // status pembelian tidak lagi disimpan di browser
-        }
+        if (!error) this.purchasedBookIds = (data || []).map(row => String(row.book_id));
       } catch (err) {
         console.error('Gagal mengambil riwayat pembelian akun:', err);
       }
@@ -2198,8 +2194,21 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
      this.openBook(book);
    },
 
+   hasFullBookAccess(book = this.activeBook) {
+     if (!book || book.accessType !== 'Berbayar') return true;
+     return Boolean(
+       this.currentUser && book.userId === this.currentUser.id
+     ) || this.purchasedBookIds.map(String).includes(String(book.id));
+   },
+
+   canReadChapter(chapterIndex = 0) {
+     if (this.hasFullBookAccess()) return true;
+     if (chapterIndex > 0) return false;
+     return !this.activeBook?.fileUrl && !this.activeBook?.file_url && !this.activeBook?.external_link;
+   },
+
    startReading(chapterIndex = 0) {
-     if (this.activeBook?.accessType === 'Berbayar' && !this.purchasedBookIds.includes(this.activeBook.id) && chapterIndex > 0) {
+     if (!this.canReadChapter(chapterIndex)) {
        this.openPaymentModal(this.activeBook);
        return;
      }
@@ -2236,9 +2245,7 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
 
    canDownloadBook(book = this.activeBook) {
      if (!book || !book.fileUrl) return false;
-     if (book.accessType === 'Gratis') return true;
-     if (this.currentUser && book.userId === this.currentUser.id) return true;
-     return this.purchasedBookIds.includes(book.id);
+     return this.hasFullBookAccess(book);
    },
 
    async getSignedFileUrl(book, expiresIn = 3600) {
@@ -2339,9 +2346,7 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
      if (this.supabaseClient && (isNumericId || isUuid)) {
        this.isLoadingChapters = true;
        try {
-         const isOwner = this.currentUser && book.userId === this.currentUser.id;
-         const hasPurchased = this.purchasedBookIds.includes(String(book.id));
-         const canAccessFull = book.accessType !== 'Berbayar' || isOwner || hasPurchased;
+         const canAccessFull = this.hasFullBookAccess(book);
 
          const { data, error } = await this.supabaseClient
            .from('chapters')
@@ -2599,7 +2604,7 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
 
    nextChapter() {
      if (this.activeBook && this.currentChapterIndex < this.activeBook.chapters.length - 1) {
-       if (this.activeBook.accessType === 'Berbayar' && !this.purchasedBookIds.includes(this.activeBook.id)) {
+       if (!this.canReadChapter(this.currentChapterIndex + 1)) {
          this.openPaymentModal(this.activeBook);
          return;
        }
