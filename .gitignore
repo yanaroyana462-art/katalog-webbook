@@ -3,3 +3,5 @@ node_modules
 .DS_Store
 *.bak*
 patch_*.py
+_arsip_backup/
+_arsip_patch/
