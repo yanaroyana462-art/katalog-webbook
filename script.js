@@ -257,8 +257,13 @@ usersRoleFilter: 'Semua',
             this.fetchUserPurchases();
             this.fetchReadingHistory();
             this.fetchAuthorStatus();
-            this.loadAuthorProfile();
+            // Muat profil hanya saat akun berganti, bukan tiap tab aktif kembali
+            if (this._profileUserId !== this.currentUser.id) {
+              this._profileUserId = this.currentUser.id;
+              this.loadAuthorProfile();
+            }
           } else {
+            this._profileUserId = null;
             this.readingBookIds = [];
           }
         });
@@ -735,7 +740,7 @@ this.isUsersModalOpen = false;
       }
     }
 
-    if (profile) {
+    if (profile && !this.isEditingId) {
       if (profile.author) this.uploadForm.author = profile.author;
       if (profile.authorBio) this.uploadForm.authorBio = profile.authorBio;
       if (profile.authorPhoto) this.uploadForm.authorPhoto = profile.authorPhoto;
@@ -1336,7 +1341,16 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
            if (updateErr) throw updateErr;
            if (!updatedData || updatedData.length === 0) throw new Error('Pembaruan buku ditolak oleh izin database (RLS) atau buku tidak ditemukan.');
 
-           await this.supabaseClient.from('chapters').delete().eq('book_id', targetId);
+           const { data: oldChapterRows, error: oldChapterErr } = await this.supabaseClient
+             .from('chapters')
+             .select('title, content, chapter_order, is_preview')
+             .eq('book_id', targetId);
+           if (oldChapterErr) throw oldChapterErr;
+           const { error: delChapterErr } = await this.supabaseClient
+             .from('chapters')
+             .delete()
+             .eq('book_id', targetId);
+           if (delChapterErr) throw delChapterErr;
            const updatedChapterRows = formattedChapters.map((chap, index) => ({
              book_id: targetId,
              title: chap.title,
@@ -1344,7 +1358,17 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
              chapter_order: index + 1,
              is_preview: index === 0 || this.uploadForm.accessType !== 'Berbayar'
            }));
-           await this.supabaseClient.from('chapters').insert(updatedChapterRows);
+           const { error: insChapterErr } = await this.supabaseClient
+             .from('chapters')
+             .insert(updatedChapterRows);
+           if (insChapterErr) {
+             if (oldChapterRows && oldChapterRows.length) {
+               await this.supabaseClient
+                 .from('chapters')
+                 .insert(oldChapterRows.map(r => ({ ...r, book_id: targetId })));
+             }
+             throw new Error('Bab gagal disimpan, bab lama sudah dipulihkan. Rincian: ' + insChapterErr.message);
+           }
            
            await this.fetchBooks();
          } catch (err) {
@@ -1503,9 +1527,13 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
              is_preview: index === 0 || newBook.accessType !== 'Berbayar'
            }));
 
-           await this.supabaseClient
+           const { error: chapterInsertErr } = await this.supabaseClient
              .from('chapters')
              .insert(chapterRows);
+           if (chapterInsertErr) {
+             await this.supabaseClient.from('books').delete().eq('id', data.id);
+             throw new Error('Bab gagal disimpan, buku dibatalkan. Rincian: ' + chapterInsertErr.message);
+           }
          }
        } catch (err) {
          const detailedError = err?.message || err?.details || JSON.stringify(err);
@@ -2073,7 +2101,13 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
          }
        }
 
-       const calculatedAccess = Number(this.editForm.price) > 0 ? 'Berbayar' : 'Gratis';
+       const oldAccess = this.editForm.originalBook?.accessType || 'Gratis';
+       let calculatedAccess = oldAccess;
+       if (this.isAdmin) {
+         calculatedAccess = Number(this.editForm.price) > 0
+           ? 'Berbayar'
+           : (oldAccess === 'Berbayar' ? 'Gratis' : oldAccess);
+       }
       const metadataPayload = this.getBookMetadataPayload(this.editForm);
        const payload = {
          title: this.editForm.title.trim(),
@@ -2083,7 +2117,9 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
          author_photo: uploadedPhotoUrl ? uploadedPhotoUrl.trim() : null,
          blurb: this.editForm.blurb.trim(),
          access_type: calculatedAccess,
-         price: Number(this.editForm.price) || 0,
+         price: this.isAdmin
+           ? (Number(this.editForm.price) || 0)
+           : (Number(this.editForm.originalBook?.price) || 0),
          external_link: this.editForm.external_link ? this.editForm.external_link.trim() : null,
          ...metadataPayload
        };
