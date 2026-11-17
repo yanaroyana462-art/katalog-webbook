@@ -106,6 +106,7 @@ usersRoleFilter: 'Semua',
     adminWaNumber: ADMIN_WHATSAPP_NUMBER,
     isPaymentModalOpen: false,
     checkoutBook: null,
+    pendingPurchaseBook: null,
     selectedPaymentMethod: 'qris',
     isProcessingPayment: false,
     paymentMethods: [
@@ -209,6 +210,10 @@ usersRoleFilter: 'Semua',
     init() {
       ['searchQuery', 'selectedCategory', 'selectedAccess', 'selectedAuthor', 'scopeFilter', 'sortBy']
         .forEach(key => this.$watch(key, () => { this.currentPage = 1; }));
+      // Setelah login, lanjutkan pembelian yang tertunda
+      this.$watch('currentUser', (user) => {
+        if (user && this.pendingPurchaseBook) this.resumePendingPurchase();
+      });
       if (new URLSearchParams(window.location.search).get('aksi') === 'unggah') this.currentView = 'upload';
       const savedTheme = localStorage.getItem('theme');
       if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -2472,6 +2477,7 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
    },
 
    closeReader() {
+     this.pendingPurchaseBook = null;
      this.stopTTS();
      this.isTocDrawerOpen = false;
      this.isEmbedFullscreen = false;
@@ -2479,7 +2485,28 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
      this.activeBook = null;
    },
 
+   async resumePendingPurchase() {
+     const book = this.pendingPurchaseBook;
+     if (!book || !this.currentUser) return;
+     this.pendingPurchaseBook = null;
+     await this.fetchUserPurchases();
+     if (this.purchasedBookIds.map(String).includes(String(book.id))) {
+       this.showToast('Anda sudah punya akses ke buku ini. Selamat membaca!', 'success');
+       if (this.activeBook && String(this.activeBook.id) === String(book.id)) this.loadSignedUrlForActiveBook();
+       return;
+     }
+     this.openPaymentModal(book);
+   },
+
    openPaymentModal(book) {
+     if (!book) return;
+     // Belum login: buka jendela login di tempat, ingat buku yang mau dibeli
+     if (!this.currentUser) {
+       this.pendingPurchaseBook = book;
+       window.dispatchEvent(new CustomEvent('open-login'));
+       this.showToast('Masuk atau daftar dulu. Setelah itu Anda langsung lanjut ke pembayaran.', 'info');
+       return;
+     }
      this.checkoutBook = book;
      this.selectedPaymentMethod = 'qris';
      this.isProcessingPayment = false;
@@ -2505,6 +2532,13 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
      const waUrl = `https://wa.me/${this.adminWaNumber}?text=${encodeURIComponent(waText)}`;
 
      if (!this.currentUser || !this.checkoutBook) {
+       const pendingBook = this.checkoutBook;
+       if (pendingBook) {
+         this.isProcessingPayment = false;
+         this.isPaymentModalOpen = false;
+         this.openPaymentModal(pendingBook);
+         return;
+       }
        this.showToast('Silakan masuk sebelum mengajukan pembelian buku.', 'error');
        this.isProcessingPayment = false;
        return;

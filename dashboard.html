@@ -24,7 +24,7 @@
   <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
   <!-- PDF-Lib untuk Stamping Watermark Dinamis -->
   <!-- Engine Logika Aplikasi -->
-  <script defer src="script.js?v=2.19"></script>
+  <script defer src="script.js?v=2.20"></script>
   <!-- Alpine.js Collapse Plugin (Wajib dimuat sebelum Alpine Core) -->
   <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
   <!-- Alpine.js -->
@@ -225,6 +225,11 @@
             <span class="sm:hidden">Kembali</span>
           </button>
         </template>
+
+        <button type="button" x-show="activeBook && !currentUser" style="display:none" @click="$dispatch('open-login')"
+                class="px-3 sm:px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition-all shadow-sm shadow-indigo-600/20 flex-shrink-0">
+          Masuk / Daftar
+        </button>
 
         <template x-if="activeBook">
           <button @click="closeReader()" class="px-3 sm:px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 dark:border-slate-700 rounded-lg text-xs font-medium transition flex items-center gap-1.5 border border-slate-300 shadow-sm flex-shrink-0">
@@ -2764,6 +2769,7 @@
 <!-- Jendela Masuk / Daftar / Lupa Password -->
 <div x-data="{ open: false }"
      @open-login.window="switchAuthMode('login'); open = true"
+     x-init="$watch('open', v => { if (!v && !currentUser) pendingPurchaseBook = null })"
      x-effect="if (currentUser) open = false"
      @keydown.escape.window="open = false"
      x-show="open && !currentUser"
@@ -2776,7 +2782,11 @@
           <h3 style="margin:0;font-size:18px;font-weight:700"
               x-text="authMode === 'login' ? 'Masuk ke Akun Anda' : (authMode === 'register' ? 'Daftar Akun Baru' : 'Lupa Kata Sandi')"></h3>
           <p style="margin:4px 0 0;font-size:12px;color:#64748b"
-             x-text="authMode === 'forgot' ? 'Masukkan email akun Anda. Kami kirim tautan untuk mengatur ulang kata sandi.' : 'Akun diperlukan untuk membeli dan membaca buku berbayar.'"></p>
+             x-text="authMode === 'forgot'
+               ? 'Masukkan email akun Anda. Kami kirim tautan untuk mengatur ulang kata sandi.'
+               : (pendingPurchaseBook
+                   ? 'Masuk atau daftar untuk membeli “' + pendingPurchaseBook.title + '”. Setelah itu Anda langsung lanjut ke pembayaran.'
+                   : 'Akun diperlukan untuk membeli dan membaca buku berbayar.')"></p>
         </div>
         <button type="button" @click="open = false" style="border:0;background:transparent;font-size:24px;line-height:1;cursor:pointer;color:#64748b">&times;</button>
       </div>
