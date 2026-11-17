@@ -109,9 +109,8 @@ usersRoleFilter: 'Semua',
     selectedPaymentMethod: 'qris',
     isProcessingPayment: false,
     paymentMethods: [
-      { id: 'qris', name: 'QRIS / E-Wallet', desc: 'GoPay, OVO, ShopeePay, Dana', badge: 'Instan' },
-      { id: 'va', name: 'Virtual Account', desc: 'BCA, Mandiri, BNI, BRI', badge: 'Otomatis' },
-      { id: 'cc', name: 'Kartu Kredit / Debit', desc: 'Visa, Mastercard, JCB', badge: 'Aman' }
+      { id: 'qris', name: 'QRIS / E-Wallet', desc: 'Dana, GoPay, OVO, ShopeePay - petunjuk dikirim admin lewat WhatsApp', badge: 'Manual' },
+      { id: 'transfer', name: 'Transfer Bank', desc: 'Nomor rekening dikirim admin lewat WhatsApp', badge: 'Manual' }
     ],
     purchasedBookIds: [],
     // State Halaman Informasi & Kebijakan (footer)
@@ -473,7 +472,11 @@ async loadUsers() {
 },
 
 exportUsersCsv() {
-  const esc = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const esc = v => {
+    let s = String(v ?? '');
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+    return '"' + s.replace(/"/g, '""') + '"';
+  };
   const rows = [['Nama', 'WhatsApp', 'Email', 'Peran', 'Terdaftar']]
     .concat(this.filteredUsers.map(u => [u.full_name, u.whatsapp, u.email, u.role, this.formatDate(u.created_at)]));
   const csv = '\ufeff' + rows.map(r => r.map(esc).join(',')).join('\n');
@@ -628,7 +631,16 @@ exportUsersCsv() {
           this.authSuccess = 'Jika email terdaftar, tautan untuk mengatur ulang kata sandi sudah dikirim. Periksa kotak masuk atau folder spam.';
         }
       } catch (err) {
-        this.authError = err.message || 'Terjadi kesalahan saat otentikasi.';
+        const rawMsg = String((err && err.message) || '');
+        const idMessages = [
+          [/invalid login credentials/i, 'Email atau kata sandi salah.'],
+          [/email not confirmed/i, 'Email belum diverifikasi. Periksa kotak masuk atau folder spam Anda.'],
+          [/user already registered/i, 'Email ini sudah terdaftar. Silakan masuk.'],
+          [/rate limit|too many/i, 'Terlalu banyak percobaan. Coba lagi beberapa menit lagi.'],
+          [/password should be at least/i, 'Kata sandi minimal 6 karakter.']
+        ];
+        const hit = idMessages.find(([re]) => re.test(rawMsg));
+        this.authError = hit ? hit[1] : (rawMsg || 'Terjadi kesalahan saat otentikasi.');
       } finally {
         this.authLoading = false;
       }
@@ -684,7 +696,10 @@ this.isUsersModalOpen = false;
     async saveAuthorProfileLocally(profile) {
       if (!this.currentUser) return;
       try {
-        localStorage.setItem('author_profile_' + this.currentUser.id, JSON.stringify(profile));
+        const toStore = String(profile.authorPhoto || '').startsWith('data:')
+          ? { ...profile, authorPhoto: '' }
+          : profile;
+        localStorage.setItem('author_profile_' + this.currentUser.id, JSON.stringify(toStore));
       } catch (e) {
         console.warn('Gagal menyimpan profil penulis secara lokal:', e);
       }
@@ -697,7 +712,7 @@ this.isUsersModalOpen = false;
               id: this.currentUser.id,
               author: profile.author || null,
               author_bio: profile.authorBio || null,
-              author_photo: profile.authorPhoto || null,
+              ...(String(profile.authorPhoto || '').startsWith('data:') ? {} : { author_photo: profile.authorPhoto || null }),
               author_links: profile.authorLinks || {},
               updated_at: new Date().toISOString()
             }, { onConflict: 'id' });
@@ -1430,7 +1445,7 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
        createdAt: new Date().toISOString().split('T')[0],
        blurb: this.uploadForm.blurb.trim(),
        isPrivate: this.uploadForm.isPrivate === 'true',
-       coverUrl: this.uploadForm.coverUrl.trim() || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80',
+       coverUrl: this.uploadForm.coverUrl.trim(),
        external_link: this.uploadForm.external_link.trim() || null,
        fileName: this.uploadForm.fileName || null,
        fileUrl: this.uploadForm.fileUrl || null,
@@ -1794,17 +1809,20 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
          if (coverPath) filesToRemove.push(coverPath);
          if (filePath) filesToRemove.push(filePath);
 
-         if (filesToRemove.length > 0) {
-           await this.supabaseClient.storage
-             .from(SUPABASE_STORAGE_BUCKET)
-             .remove(filesToRemove);
-         }
+         // Berkas di storage dihapus SETELAH baris buku berhasil dihapus (lihat di bawah)
 
-         const { error } = await this.supabaseClient
+         const { error, count } = await this.supabaseClient
            .from('books')
-           .delete()
+           .delete({ count: 'exact' })
            .eq('id', book.id);
          if (error) throw error;
+         if (!count) throw new Error('Buku tidak terhapus (izin database menolak).');
+         if (filesToRemove.length > 0) {
+           const { error: storageErr } = await this.supabaseClient.storage
+             .from(SUPABASE_STORAGE_BUCKET)
+             .remove(filesToRemove);
+           if (storageErr) console.warn('Berkas buku gagal dihapus dari penyimpanan:', storageErr.message);
+         }
        } catch (err) {
          this.showToast('Gagal menghapus buku: ' + err.message, 'error');
          return;
@@ -2410,6 +2428,9 @@ async compressImage(file, maxWidth = 600, quality = 0.78) {
      this.activeBook = { ...book, chapters: book.chapters ? [...book.chapters] : [] };
      this.rememberReadBook(book);
           this.trackEvent('book_open', book);
+     if (this.currentUser && book.accessType === 'Berbayar' && !this.hasFullBookAccess(book)) {
+       await this.fetchUserPurchases();
+     }
      this.activeBookSignedUrl = '';
      this.currentChapterIndex = 0;
      this.isEmbedFullscreen = false;
