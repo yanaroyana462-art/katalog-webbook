@@ -205,7 +205,7 @@ usersRoleFilter: 'Semua',
     },
 
     // Daftar Kategori Dinamis
-    categories: ['Semua', 'Teknologi & AI', 'Edukasi & Parenting', 'Bisnis & SOP', 'Agama & Pemikiran', 'Pengembangan Diri & Komunikasi', 'Fiksi & Sastra', 'Kesehatan & Gaya Hidup', 'Sejarah', 'Politik', 'Ekonomi'],
+   categories: ['Semua', 'Teknologi & AI', 'Komputer', 'Edukasi & Parenting', 'Bisnis & SOP', 'Agama & Pemikiran', 'Pengembangan Diri & Komunikasi', 'Fiksi & Sastra', 'Kesehatan & Gaya Hidup', 'Sejarah', 'Politik', 'Ekonomi'],
 
     init() {
       ['searchQuery', 'selectedCategory', 'selectedAccess', 'selectedAuthor', 'scopeFilter', 'sortBy']
