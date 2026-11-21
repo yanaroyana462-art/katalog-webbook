@@ -24,18 +24,30 @@
   <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.0.9/dist/purify.min.js"></script>
   <!-- PDF-Lib untuk Stamping Watermark Dinamis -->
   <!-- Engine Logika Aplikasi -->
-  <script defer src="script.js?v=2.21"></script>
+  <script defer src="script.js?v=2.22"></script>
   <!-- Alpine.js Collapse Plugin (Wajib dimuat sebelum Alpine Core) -->
   <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
   <!-- Alpine.js -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <link rel="stylesheet" href="tailwind.css?v=15" />
+  <link rel="stylesheet" href="tailwind.css?v=16" />
   <script defer src="https://cloud.umami.is/script.js" data-website-id="f06bcb2f-20c3-4329-9eb8-5ac5daea37b2"></script>
   <!-- Custom Stylesheet -->
   <link rel="stylesheet" href="style.css" />
   <style>
     /* Rak buku: flex, kartu rata tinggi, sampul utuh */
     .book-grid { display: flex; flex-wrap: wrap; gap: .75rem; }
+    /* Header: tombol boleh turun baris, tidak melebar keluar layar */
+html { overflow-x: clip; }
+.hdr-inner { flex-wrap: wrap; row-gap: .5rem; }
+.hdr-brand { min-width: 0; }
+.hdr-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .375rem; margin-left: auto; min-width: 0; }
+@media (max-width: 639px) {
+  .hdr-inner { padding-left: .75rem; padding-right: .75rem; }
+  .hdr-actions { width: 100%; justify-content: flex-start; }
+}
+@media (min-width: 640px) {
+  .hdr-actions { gap: .5rem; flex-wrap: nowrap; }
+}
     .book-card { flex: 1 1 calc(50% - .375rem); max-width: calc(50% - .375rem); min-width: 0; }
     @media (min-width: 640px) {
       .book-grid { gap: 1.25rem; }
@@ -117,8 +129,8 @@
   <!-- 1. HEADER & NAVBAR                         -->
   <!-- ========================================== -->
   <header class="border-b border-stone-200/70 bg-[#fdfcfb]/85 dark:border-slate-800 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 transition-colors shadow-[0_2px_15px_-3px_rgba(0,0,0,0.03)]">
-    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-      <div class="flex items-center gap-3 cursor-pointer" @click="goToCatalog()">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between hdr-inner">
+     <div class="flex items-center gap-3 cursor-pointer hdr-brand" @click="goToCatalog()">
   <!-- Logo Gambar Baru -->
   <img src="https://cdn.phototourl.com/member/2026-10-24-08317015-b1ce-440f-8038-f9ca50465f76.png" 
        alt="Logo Katalog WebBook" 
@@ -130,7 +142,7 @@
   </div>
 </div>
 
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 hdr-actions">
                 <!-- Tombol Donasi -->
         <button @click="openDonateModal()" type="button"
                 class="px-2.5 sm:px-3 py-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-300 border border-rose-200 dark:border-rose-900/60 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-sm">
